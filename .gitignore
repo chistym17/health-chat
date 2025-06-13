@@ -1,2 +1,6 @@
 venv
 whisper/
+__pycache__
+.env
+node_modules
+,next
