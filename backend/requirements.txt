@@ -3,3 +3,5 @@ uvicorn
 python-multipart 
 assemblyai
 dotenv
+google-genai
+langchain-google-genai
