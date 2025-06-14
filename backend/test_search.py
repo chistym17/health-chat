@@ -1,24 +1,14 @@
 
 import asyncio
-from utils.local_embedder import get_embedding
-from utils.faiss_index import search_faiss
+from workflows.retrieval_workflow import retrieval_workflow
 
-
-async def run_search():
-    query = "I have chest pain and trouble breathing"
-    
-    print("Embedding text...")
-    vector = get_embedding(query)
-    
-    print("Searching FAISS index...")
-    results = search_faiss(vector, k=5)
-
-    print("\n🔍 Top Results:")
+async def test():
+    symptom_text = "I have chest pain and shortness of breath"
+    results = await retrieval_workflow.ainvoke(symptom_text)
     for i, result in enumerate(results, 1):
-        print(f"\nResult #{i}")
-        for key, value in result.items():
-            print(f"{key}: {value}")
-
+        print(f"\nMatch #{i}")
+        for k, v in result.items():
+            print(f"{k}: {v}")
 
 if __name__ == "__main__":
-    asyncio.run(run_search())
+    asyncio.run(test())
