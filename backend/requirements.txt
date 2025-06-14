@@ -5,3 +5,7 @@ assemblyai
 dotenv
 google-genai
 langchain-google-genai
+faiss-cpu
+numpy
+pandas
+requests

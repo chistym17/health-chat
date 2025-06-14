@@ -8,7 +8,7 @@ async def test_workflow():
     uri = "ws://localhost:8000/ws/chat"  
 
     async with websockets.connect(uri) as websocket:
-        message = {"text": "I am chisty.i like to play with my friends"}
+        message = {"text": "I dont feel well"}
         await websocket.send(json.dumps(message))
         print(f"> Sent: {message['text']}")
 
