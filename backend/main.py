@@ -4,11 +4,14 @@ from dotenv import load_dotenv
 import os
 import shutil
 import assemblyai as aai
-# main.py
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from workflows.proccess_workflow import workflow
+from workflows.proccess_workflow import process_workflow
 import uvicorn
+
+from agents.classifier_agent import ClassifierAgent
+from agents.diagnosis_agent import DiagnosisAgent
+from workflows.retrieval_workflow import retrieval_workflow  
 
 
 load_dotenv()
@@ -27,6 +30,11 @@ app.add_middleware(
 
 
 
+app = FastAPI()
+
+classifier_agent = ClassifierAgent()
+diagnosis_agent = DiagnosisAgent()
+
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -39,14 +47,45 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_json({"error": "No input received."})
                 continue
 
-            result = await workflow.ainvoke({"text": user_text})
-            await websocket.send_json(result)
+            classification_result = await process_workflow.ainvoke({"text": user_text})
+            status = classification_result.get("status")
+
+            if status == "warning":
+                await websocket.send_json({
+                    "type": "info",
+                    "message": classification_result.get("message", "This query does not appear to be health related.")
+                })
+
+            elif status == "followup":
+                await websocket.send_json({
+                    "type": "followup",
+                    "message": "I need a bit more info to help you. Please answer:",
+                    "questions": classification_result.get("questions", [])
+                })
+
+            elif status == "completed":
+                chunks = await retrieval_workflow.ainvoke(user_text)
+
+                diagnosis = diagnosis_agent.run(user_text, chunks)
+
+                await websocket.send_json({
+                    "type": "diagnosis",
+                    "message": diagnosis
+                })
+
+            else:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": classification_result.get("message", "An unknown error occurred.")
+                })
 
     except WebSocketDisconnect:
         print("WebSocket disconnected.")
 
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
 
 
 

@@ -5,7 +5,7 @@ classifier = ClassifierAgent()
 
 classifier_step = RunnableLambda(lambda input: classifier.run(input["text"]))
 
-workflow = (
+process_workflow = (
     RunnableLambda(lambda input: {"text": input["text"]})
     .assign(classification=classifier_step)
     .pipe(
