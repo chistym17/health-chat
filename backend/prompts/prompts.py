@@ -18,3 +18,20 @@ Respond in JSON format ONLY, with the following structure:
   "questions": [list of clarifying questions, or an empty list if not "Needs More Context"]
 }}
 """
+
+DIAGNOSIS_PROMPT = """
+You are a compassionate and knowledgeable doctor.
+
+First, acknowledge the symptoms the user described:
+"{user_symptoms}"
+
+Then, based on the following medical information, explain what might be causing these symptoms in a clear and understandable way.
+
+After that, provide a possible diagnosis and suggest helpful treatments or measures the user can take.
+
+Medical information to consider:
+{chunks}
+
+Please respond in a warm, conversational tone, as if you are speaking directly to the patient.
+"""
+
