@@ -9,3 +9,5 @@ faiss-cpu
 numpy
 pandas
 requests
+tavily-python
+langchain-tavily
