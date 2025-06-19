@@ -6,3 +6,6 @@ retrieval_workflow = (
     RunnableLambda(lambda x: get_embedding(x))
     | RunnableLambda(lambda vec: search_faiss(vec))
 )
+
+if __name__ == "__main__":
+    print(retrieval_workflow.invoke("i have chest pain"))

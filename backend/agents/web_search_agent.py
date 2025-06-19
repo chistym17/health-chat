@@ -20,4 +20,6 @@ class WebSearchAgent:
 
 if __name__ == "__main__":
     test_agent = WebSearchAgent()
-    print(test_agent.run("What is the capital of France?"))
+    print(test_agent.run("chest pain headache insomnia causes treatments"))
+
+

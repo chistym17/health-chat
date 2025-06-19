@@ -19,6 +19,25 @@ Respond in JSON format ONLY, with the following structure:
 }}
 """
 
+TRANSFORM_QUERY_PROMPT = """
+You are a medical query analysis assistant. You will receive a user input describing a health issue.
+
+Your task is to:
+1. Extract any symptoms or medical indicators from the text for internal symptom-based search.
+2. Transform the input into a short, precise, and optimized search query suitable for online medical information retrieval.
+
+Return your output as a JSON object in the following format:
+
+{{
+  "symptoms": [list of extracted symptoms as strings],
+  "search_query": "a concise, keyword-optimized web search query including causes and treatments"
+}}
+
+User Input:
+"{user_input}"
+"""
+
+
 DIAGNOSIS_PROMPT = """
 You are a friendly and knowledgeable doctor helping with a demo health assistant project.
 This is not a real medical case, so there is no need to raise urgent concerns or warnings.

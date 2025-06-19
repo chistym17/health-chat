@@ -17,3 +17,5 @@ def search_faiss(query_vector: list[float], k: int = 2):
     query_vector = np.array([query_vector]).astype("float32")
     _, indices = faiss_index.search(query_vector, k)
     return metadata_df.iloc[indices[0]].to_dict(orient="records")
+
+
