@@ -7,6 +7,7 @@ import assemblyai as aai
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from workflows.proccess_workflow import process_workflow
+from workflows.query_transformation_workflow import query_transformation_workflow
 import uvicorn
 
 from agents.classifier_agent import ClassifierAgent
@@ -64,13 +65,28 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
 
             elif status == "completed":
-                chunks = await retrieval_workflow.ainvoke(user_text)
+                # Step 1: Run query transformation workflow
+                query_transform_result = await query_transformation_workflow.ainvoke({"text": user_text})
+                transformed_query = query_transform_result.get("search_query", "")
+                symptoms = query_transform_result.get("symptoms", [])
+
+                # Step 2: Run retrieval workflow with transformed query
+                chunks = await retrieval_workflow.ainvoke(symptoms)
+
+                # Step 3: Placeholder for websearch workflow
+                # web_results = await websearch_workflow.ainvoke(transformed_query)
+                web_results = None  
 
                 diagnosis = diagnosis_agent.run(user_text, chunks)
 
                 await websocket.send_json({
                     "type": "diagnosis",
-                    "message": diagnosis
+                    "message": diagnosis,
+                    "query_transformation": {
+                        "symptoms": symptoms,
+                        "search_query": transformed_query
+                    },
+                    "web_results": web_results
                 })
 
             else:
