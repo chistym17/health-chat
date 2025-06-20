@@ -53,3 +53,34 @@ Gently explain what might be going on and suggest general advice or treatments,
 but keep it short and conversational (under 10 lines). No need for emergency alerts.
 """
 
+WEB_SEARCH_PARSE_PROMPT = """
+You are a medical information extraction assistant.
+
+You will receive a list of web search result texts about possible medical conditions, symptoms, and treatments.
+
+Your job is to extract and summarize 4-5 structured data objects from these results. Each object should have the following fields:
+- Name: The name of the condition or disease
+- Symptoms: A concise, comma-separated list of main symptoms
+- Treatments: A concise, comma-separated list of main treatments or management strategies
+
+Return your output as a JSON array of objects, each in this format:
+{{
+    "Name": "...",
+    "Symptoms": "...",
+    "Treatments": "..."
+}}
+
+Be brief, avoid repetition, and use only information found in the search results.
+
+Example output:
+[
+  {{
+    "Name": "Panic Attack",
+    "Symptoms": "Chest pain, shortness of breath, palpitations",
+    "Treatments": "Breathing exercises, relaxation techniques, therapy",
+    "source": "web"
+  }},
+  ...
+]
+"""
+
