@@ -4,7 +4,7 @@ from prompts.prompts import TRANSFORM_QUERY_PROMPT
 import re
 import json
 
-class WebSearchQueryAgent:
+class QueryTransformationAgent:
     def __init__(self):
         self.llm = get_gemini_llm()
 
@@ -18,5 +18,5 @@ class WebSearchQueryAgent:
 
 
 if __name__ == "__main__":
-    agent = WebSearchQueryAgent()
+    agent = QueryTransformationAgent()
     print(agent.transform("i have chest pain. i also have a headache, i can not sleep properly"))
