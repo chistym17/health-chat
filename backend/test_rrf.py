@@ -5,7 +5,8 @@ from utils.rrf_ranking import (
     rank_vector_results, 
     rank_web_results, 
     combine_and_rank_with_rrf,
-    get_top_results
+    get_top_results,
+    get_structured_results_for_llm
 )
 from workflows.query_transformation_workflow import query_transformation_workflow
 from agents.web_search_agent import WebSearchAgent, WebSearchParseAgent
@@ -82,13 +83,18 @@ async def test_full_pipeline_with_rrf():
     top_5_results = get_top_results(vector_results, parsed_web_results, top_k=5)
     pretty_print("Top 5 Results", top_5_results)
     
+    # Get structured results for LLM
+    structured_results = get_structured_results_for_llm(vector_results, parsed_web_results, top_k=5)
+    pretty_print("Structured Results for LLM", structured_results)
+    
     # Detailed analysis
     print("\n📈 Detailed RRF Analysis:")
     for i, result in enumerate(combined_results[:5], 1):
         print(f"\n{i}. Combined Score: {result['combined_score']:.6f}")
         print(f"   Source: {result['source']}")
         print(f"   Rank: {result['rank']}")
-        print(f"   Content: {result['content'][:150]}...")
+        print(f"   Condition: {result['structured_data']['Name']}")
+        print(f"   Symptoms: {result['structured_data']['Symptoms'][:100]}...")
         if 'web_rank' in result:
             print(f"   Also found in web results at rank: {result['web_rank']}")
     
@@ -107,9 +113,15 @@ async def test_full_pipeline_with_rrf():
     from agents.diagnosis_agent import DiagnosisAgent
     diagnosis_agent = DiagnosisAgent()
     
-    # Use top results for diagnosis
-    top_chunks = [result['content'] for result in top_5_results]
-    formatted_chunks = [{"page_content": chunk, "metadata": {}} for chunk in top_chunks]
+    # Use structured results for diagnosis
+    formatted_chunks = []
+    for result in structured_results:
+        chunk = {
+            "page_content": f"Condition: {result['Name']}\nSymptoms: {result['Symptoms']}\nTreatments: {result['Treatments']}",
+            "metadata": {"name": result['Name']}
+        }
+        formatted_chunks.append(chunk)
+    
     final_diagnosis = diagnosis_agent.run(user_symptoms=user_text, chunks=formatted_chunks)
     pretty_print("Final Diagnosis", final_diagnosis)
 
