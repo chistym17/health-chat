@@ -8,6 +8,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from workflows.proccess_workflow import process_workflow
 from workflows.query_transformation_workflow import query_transformation_workflow
+from workflows.websearch_workflow import websearch_workflow
+from utils.rrf_ranking import get_top_results
 import uvicorn
 
 from agents.classifier_agent import ClassifierAgent
@@ -71,13 +73,26 @@ async def websocket_endpoint(websocket: WebSocket):
                 symptoms = query_transform_result.get("symptoms", [])
 
                 # Step 2: Run retrieval workflow with transformed query
-                chunks = await retrieval_workflow.ainvoke(symptoms)
+                vector_results = await retrieval_workflow.ainvoke(transformed_query)
+                # Vector results are already in structured format from FAISS
 
-                # Step 3: Placeholder for websearch workflow
-                # web_results = await websearch_workflow.ainvoke(transformed_query)
-                web_results = None  
+                # Step 3: Run websearch workflow
+                web_results = await websearch_workflow.ainvoke({"query": transformed_query})
 
-                diagnosis = diagnosis_agent.run(user_text, chunks)
+                # Step 4: Combine and rank results using RRF
+                structured_results = get_top_results(
+                    vector_results=vector_results,
+                    web_results=web_results,
+                    top_k=3
+                )
+
+                print(structured_results)
+
+       
+
+                # Step 6: Generate diagnosis
+                print(structured_results)
+                diagnosis = diagnosis_agent.run(user_symptoms=user_text, chunks=structured_results)
 
                 await websocket.send_json({
                     "type": "diagnosis",
@@ -86,7 +101,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         "symptoms": symptoms,
                         "search_query": transformed_query
                     },
-                    "web_results": web_results
+                    "web_results": web_results,
+                    "structured_results": structured_results
                 })
 
             else:
