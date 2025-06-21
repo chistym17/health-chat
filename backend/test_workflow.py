@@ -39,7 +39,7 @@ async def run_full_test():
     # 3. Web Search
     web_search_agent = WebSearchAgent()
     web_results = web_search_agent.run(search_query)
-    pretty_print("3. Web Search Results (Raw)", web_results[:2]) # Print first 2 results for brevity
+    pretty_print("3. Web Search Results (Raw)", web_results[:2]) 
 
     # 4. Parse Web Search Results
     web_parse_agent = WebSearchParseAgent()
@@ -47,19 +47,20 @@ async def run_full_test():
     pretty_print("4. Parsed Web Search Results", parsed_web_results)
 
     # 5. Local Retrieval
-    # We use the search_query for retrieval as it's a more coherent string for embedding
-    retrieved_chunks = await retrieval_workflow.ainvoke(search_query)
+    retrieved_docs = await retrieval_workflow.ainvoke(search_query)
+    if retrieved_docs and hasattr(retrieved_docs[0], 'page_content'):
+        retrieved_chunks = [doc.page_content for doc in retrieved_docs]
+    else:
+        retrieved_chunks = [doc.get('content', str(doc)) for doc in retrieved_docs]
     pretty_print("5. Local Retrieval Results", retrieved_chunks)
 
-    # 6. Combine all context for Diagnosis
-    # Format parsed web results into strings
     web_context = [f"Condition: {item['Name']}\\nSymptoms: {item['Symptoms']}\\nTreatments: {item['Treatments']}" for item in parsed_web_results]
     combined_chunks = retrieved_chunks + web_context
     pretty_print("6. Combined Context for Diagnosis", combined_chunks)
 
-    # 7. Diagnosis
     diagnosis_agent = DiagnosisAgent()
-    final_diagnosis = diagnosis_agent.run(user_input=user_text, chunks=combined_chunks)
+    formatted_chunks = [{"page_content": chunk, "metadata": {}} for chunk in combined_chunks]
+    final_diagnosis = diagnosis_agent.run(user_symptoms=user_text, chunks=formatted_chunks)
     pretty_print("7. Final Diagnosis", final_diagnosis)
 
 
