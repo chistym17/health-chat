@@ -13,11 +13,3 @@ def run_websearch(query: str) -> list[dict]:
 
 websearch_workflow = RunnableLambda(lambda input: run_websearch(input["query"]))
 
-if __name__ == "__main__":
-    test_query = "chest pain headache insomnia causes treatments"
-    result = websearch_workflow.invoke({"query": test_query})
-    print("WebSearch Workflow Result:")
-    for i, item in enumerate(result, 1):
-        print(f"\n{i}. {item['Name']}")
-        print(f"   Symptoms: {item['Symptoms']}")
-        print(f"   Treatments: {item['Treatments']}") 

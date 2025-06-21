@@ -37,14 +37,5 @@ class WebSearchParseAgent:
         except Exception:
             return []
 
-if __name__ == "__main__":
-    test_agent = WebSearchAgent()
-    results = test_agent.run("chest pain headache insomnia causes treatments")
-
-    print(results)
-
- 
-    agent = WebSearchParseAgent()
-    print(agent.parse(results))
 
 

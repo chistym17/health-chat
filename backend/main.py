@@ -31,8 +31,6 @@ app.add_middleware(
 )
 
 
-
-
 app = FastAPI()
 
 classifier_agent = ClassifierAgent()
@@ -67,31 +65,21 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
 
             elif status == "completed":
-                # Step 1: Run query transformation workflow
                 query_transform_result = await query_transformation_workflow.ainvoke({"text": user_text})
                 transformed_query = query_transform_result.get("search_query", "")
                 symptoms = query_transform_result.get("symptoms", [])
 
-                # Step 2: Run retrieval workflow with transformed query
                 vector_results = await retrieval_workflow.ainvoke(transformed_query)
-                # Vector results are already in structured format from FAISS
 
-                # Step 3: Run websearch workflow
                 web_results = await websearch_workflow.ainvoke({"query": transformed_query})
 
-                # Step 4: Combine and rank results using RRF
                 structured_results = get_top_results(
                     vector_results=vector_results,
                     web_results=web_results,
                     top_k=3
                 )
 
-                print(structured_results)
 
-       
-
-                # Step 6: Generate diagnosis
-                print(structured_results)
                 diagnosis = diagnosis_agent.run(user_symptoms=user_text, chunks=structured_results)
 
                 await websocket.send_json({
