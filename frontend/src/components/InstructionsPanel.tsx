@@ -10,7 +10,7 @@ const InstructionsPanel = ({ onDemoClick }: InstructionsPanelProps) => {
   return (
     <Card className="bg-white/80 backdrop-blur-md border-blue-200 shadow-xl animate-fade-in">
       <CardContent className="pt-6">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-6">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center shadow-lg animate-pop">
               <Mic className="w-8 h-8 text-blue-600 animate-pulse" />
@@ -38,8 +38,26 @@ const InstructionsPanel = ({ onDemoClick }: InstructionsPanelProps) => {
               Get instant analysis
             </div>
           </div>
-          <div className="pt-4 border-t border-gray-200">
-            <DemoButton onClick={onDemoClick} />
+          
+          {/* Demo Section */}
+          <div className="pt-6 border-t border-gray-200 space-y-4">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Quick Start</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Try our demo voices to see how it works, or record your own voice input below.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <DemoButton onClick={onDemoClick} />
+            </div>
+            <div className="text-center">
+              <p className="text-gray-500 text-sm font-medium">
+                ↓ OR ↓
+              </p>
+              <p className="text-gray-600 text-sm mt-2">
+                Give your own voice input using the microphone below
+              </p>
+            </div>
           </div>
         </div>
       </CardContent>
