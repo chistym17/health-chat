@@ -14,42 +14,88 @@ const Conversation = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
-  const handleAudioSubmission = (audioBlob: Blob) => {
-    setIsProcessing(true);
-    
-    // Add user message indicating voice input
-    setMessages(prev => [...prev, createVoiceMessage("0:00")]);
-    
-    // Simulate AI processing
-    setTimeout(() => {
-      setMessages(prev => [...prev, createBotResponse()]);
-      setIsProcessing(false);
-    }, 2000);
-    
-    // TODO: Send audioBlob to backend
-    console.log('Audio blob to send to backend:', audioBlob);
+  // Helper to check if the audio is a demo audio (by presence of demoVoiceId)
+  const isDemoAudio = (audioBlob: Blob & { demoVoiceId?: string }): boolean => {
+    return Boolean(audioBlob && (audioBlob as any).demoVoiceId);
   };
 
-  const handleDemoSubmission = async (demoVoice: DemoVoice) => {
+  // Real audio submission handler
+  const sendRealAudioToBackend = async (audioBlob: Blob) => {
     setIsProcessing(true);
-    
-    // Add demo message with transcript
+    setMessages(prev => [...prev, createVoiceMessage("0:00")]);
+    try {
+      // Example: POST to /api/audio (adjust as needed)
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "user_audio.wav");
+      const response = await fetch("/api/audio", {
+        method: "POST",
+        body: formData,
+      });
+      // Simulate AI processing (replace with real response handling)
+      setTimeout(() => {
+        setMessages(prev => [...prev, createBotResponse()]);
+        setIsProcessing(false);
+      }, 2000);
+    } catch (error) {
+      setIsProcessing(false);
+      setMessages(prev => [...prev, { type: "bot", content: "Error sending audio to backend." }]);
+    }
+  };
+
+  // Demo audio submission handler (WebSocket)
+  const sendDemoAudioToBackend = async (demoVoiceId: string) => {
+    setIsProcessing(true);
     setMessages(prev => [...prev, {
       type: 'user',
-      content: getDemoMessageContent(demoVoice)
+      content: `🎤 Demo Voice Message (${demoVoiceId})`
     }]);
-    
-    // Create audio blob from demo file
-    const audioBlob = await createDemoAudioBlob(demoVoice);
-    
-    // Simulate AI processing
-    setTimeout(() => {
-      setMessages(prev => [...prev, createBotResponse()]);
+    try {
+      const ws = new WebSocket("ws://localhost:8000/ws/demo");
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ demo_voice_id: demoVoiceId }));
+      };
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "diagnosis") {
+          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+          setIsProcessing(false);
+          ws.close();
+        } else if (data.type === "error") {
+          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+          setIsProcessing(false);
+          ws.close();
+        } else if (data.type === "demo_processing") {
+          // Optionally show a processing message
+        }
+      };
+      ws.onerror = () => {
+        setIsProcessing(false);
+        setMessages(prev => [...prev, { type: "bot", content: "WebSocket error with demo voice." }]);
+        ws.close();
+      };
+    } catch (error) {
       setIsProcessing(false);
-    }, 2000);
-    
-    // TODO: Send audioBlob to backend
-    console.log('Demo audio blob to send to backend:', audioBlob);
+      setMessages(prev => [...prev, { type: "bot", content: "Error sending demo audio to backend." }]);
+    }
+  };
+
+  // Main handler for audio submission
+  const handleAudioSubmission = async (audioBlob: Blob & { demoVoiceId?: string }) => {
+    if (isDemoAudio(audioBlob)) {
+      // If it's a demo audio, send demoVoiceId to backend via WebSocket
+      await sendDemoAudioToBackend((audioBlob as any).demoVoiceId);
+    } else {
+      // Otherwise, treat as real user audio
+      await sendRealAudioToBackend(audioBlob);
+    }
+  };
+
+  // Demo handler (called from modal)
+  const handleDemoSubmission = async (demoVoice: DemoVoice) => {
+    // Attach demoVoiceId to a dummy blob for the handler
+    const dummyBlob = new Blob(["demo"], { type: "audio/mp3" }) as Blob & { demoVoiceId?: string };
+    dummyBlob.demoVoiceId = demoVoice.id;
+    await handleAudioSubmission(dummyBlob);
   };
 
   return (

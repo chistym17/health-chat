@@ -12,8 +12,10 @@ from utils.rrf_ranking import get_top_results
 from agents.diagnosis_agent import DiagnosisAgent
 
 async def handle_demo_voice(websocket: WebSocket, demo_voice_id: str):
+    print(f"[DEMO] Received request for demo_voice_id: {demo_voice_id}")
 
     if not validate_demo_voice_id(demo_voice_id):
+        print(f"[DEMO][ERROR] Invalid demo voice ID: {demo_voice_id}")
         await websocket.send_json({
             "type": "error",
             "message": f"Invalid demo voice ID: {demo_voice_id}"
@@ -22,6 +24,7 @@ async def handle_demo_voice(websocket: WebSocket, demo_voice_id: str):
     
     demo_voice = get_demo_voice_by_id(demo_voice_id)
     if not demo_voice:
+        print(f"[DEMO][ERROR] Demo voice not found: {demo_voice_id}")
         await websocket.send_json({
             "type": "error", 
             "message": f"Demo voice not found: {demo_voice_id}"
@@ -29,6 +32,7 @@ async def handle_demo_voice(websocket: WebSocket, demo_voice_id: str):
         return
     
     user_text = demo_voice.transcript
+    print(f"[DEMO] Processing transcript for {demo_voice.speaker}: {user_text}")
     
     try:
         await websocket.send_json({
@@ -40,22 +44,31 @@ async def handle_demo_voice(websocket: WebSocket, demo_voice_id: str):
                 "symptoms": demo_voice.symptoms
             }
         })
-        
+        print(f"[DEMO] Starting query transformation workflow...")
         query_transform_result = await query_transformation_workflow.ainvoke({"text": user_text})
         transformed_query = query_transform_result.get("search_query", "")
         symptoms = query_transform_result.get("symptoms", [])
+        print(f"[DEMO] Query transformation result: {transformed_query}, symptoms: {symptoms}")
         
+        print(f"[DEMO] Starting vector retrieval workflow...")
         vector_results = await retrieval_workflow.ainvoke(transformed_query)
+        print(f"[DEMO] Vector retrieval complete.")
         
+        print(f"[DEMO] Starting web search workflow...")
         web_results = await websearch_workflow.ainvoke({"query": transformed_query})
+        print(f"[DEMO] Web search complete.")
         
+        print(f"[DEMO] Ranking and structuring results...")
         structured_results = get_top_results(
             vector_results=vector_results,
             web_results=web_results,
             top_k=3
         )
+        print(f"[DEMO] Structured results ready.")
         
+        print(f"[DEMO] Running diagnosis agent...")
         diagnosis = DiagnosisAgent().run(user_symptoms=user_text, chunks=structured_results)
+        print(f"[DEMO] Diagnosis complete.")
         
         await websocket.send_json({
             "type": "diagnosis",
@@ -72,8 +85,10 @@ async def handle_demo_voice(websocket: WebSocket, demo_voice_id: str):
                 "original_transcript": user_text
             }
         })
+        print(f"[DEMO] Response sent to frontend.")
             
     except Exception as e:
+        print(f"[DEMO][ERROR] Exception during demo processing: {str(e)}")
         await websocket.send_json({
             "type": "error",
             "message": f"Error processing demo voice: {str(e)}",
@@ -88,13 +103,16 @@ async def demo_websocket_endpoint(websocket: WebSocket):
     WebSocket endpoint for demo voice processing
     """
     await websocket.accept()
+    print("[DEMO] WebSocket connection accepted.")
     
     try:
         while True:
             data = await websocket.receive_json()
             demo_voice_id = data.get("demo_voice_id")
+            print(f"[DEMO] Received data: {data}")
             
             if not demo_voice_id:
+                print("[DEMO][ERROR] No demo voice ID received.")
                 await websocket.send_json({
                     "type": "error",
                     "message": "No demo voice ID received."
@@ -104,9 +122,9 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             await handle_demo_voice(websocket, demo_voice_id)
             
     except WebSocketDisconnect:
-        print("Demo WebSocket disconnected.")
+        print("[DEMO] Demo WebSocket disconnected.")
     except Exception as e:
-        print(f"Error in demo WebSocket: {str(e)}")
+        print(f"[DEMO][ERROR] Error in demo WebSocket: {str(e)}")
         try:
             await websocket.send_json({
                 "type": "error",
