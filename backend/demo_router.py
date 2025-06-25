@@ -9,7 +9,7 @@ from workflows.query_transformation_workflow import query_transformation_workflo
 from workflows.retrieval_workflow import retrieval_workflow
 from workflows.websearch_workflow import websearch_workflow
 from utils.rrf_ranking import get_top_results
-from agents.diagnosis_agent import diagnosis_agent
+from agents.diagnosis_agent import DiagnosisAgent
 
 async def handle_demo_voice(websocket: WebSocket, demo_voice_id: str):
 
@@ -55,7 +55,7 @@ async def handle_demo_voice(websocket: WebSocket, demo_voice_id: str):
             top_k=3
         )
         
-        diagnosis = diagnosis_agent.run(user_symptoms=user_text, chunks=structured_results)
+        diagnosis = DiagnosisAgent().run(user_symptoms=user_text, chunks=structured_results)
         
         await websocket.send_json({
             "type": "diagnosis",

@@ -11,6 +11,7 @@ from workflows.query_transformation_workflow import query_transformation_workflo
 from workflows.websearch_workflow import websearch_workflow
 from utils.rrf_ranking import get_top_results
 import uvicorn
+from demo_router import demo_websocket_endpoint
 
 from agents.classifier_agent import ClassifierAgent
 from agents.diagnosis_agent import DiagnosisAgent
@@ -102,6 +103,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print("WebSocket disconnected.")
 
+app.add_api_websocket_route("/ws/demo", demo_websocket_endpoint)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
