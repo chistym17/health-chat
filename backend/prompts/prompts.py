@@ -69,6 +69,8 @@ Keep it:
 - Focused on 1-2 most probable causes
 - Specific with treatments (not generic advice like "rest more")
 - Around 8-10 lines total
+
+**Do NOT include any bracketed instructions, meta-instructions, or thinking steps in your output. Only output the final response in natural language, as if you are speaking directly to the user.**
 """
 
 
