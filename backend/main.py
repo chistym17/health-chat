@@ -160,7 +160,7 @@ async def process_audio(audio: UploadFile = File(...)):
             logger.info("Query requires followup questions")
             return {
                 "type": "followup",
-                "message": "I need a bit more info to help you. Please answer:",
+                "message": "please ask question related to health",
                 "questions": classification_result.get("questions", []),
                 "transcribed_text": transcribed_text
             }
