@@ -26,7 +26,7 @@ const Navigation = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Link to="/consultation">
+            <Link to="/conversation">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full">
                 Start Consultation
               </Button>

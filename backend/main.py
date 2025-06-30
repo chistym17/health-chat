@@ -11,12 +11,12 @@ from workflows.query_transformation_workflow import query_transformation_workflo
 from workflows.websearch_workflow import websearch_workflow
 from utils.rrf_ranking import get_top_results
 import uvicorn
-from demo_router import demo_websocket_endpoint
+from demo_router import router as demo_router
 import logging
 
 from agents.classifier_agent import ClassifierAgent
 from agents.diagnosis_agent import DiagnosisAgent
-from workflows.retrieval_workflow import retrieval_workflow  
+from workflows.retrieval_workflow import retrieval_workflow
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -228,7 +228,7 @@ async def process_audio(audio: UploadFile = File(...)):
             os.remove(temp_path)
             logger.info(f"Cleaned up temporary file: {temp_path}")
 
-app.add_api_websocket_route("/ws/demo", demo_websocket_endpoint)
+app.include_router(demo_router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

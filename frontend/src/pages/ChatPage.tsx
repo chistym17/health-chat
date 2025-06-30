@@ -12,7 +12,6 @@ const ChatPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<"idle" | "processing" | "searching" | "replying">("idle");
   const [aiTranscript, setAiTranscript] = useState<string>("");
-  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (!audioInfo) {
@@ -96,43 +95,67 @@ const ChatPage = () => {
     };
 
     // Handle demo audio
-    const sendDemoAudio = () => {
+    const sendDemoAudio = async () => {
       if (audioInfo.type !== "demo") return;
+      
+      console.log("🔄 Starting demo audio processing...");
       setIsProcessing(true);
       setProgress("processing");
       setMessages(prev => [...prev, {
         type: 'user',
         content: `🎤 Demo Voice Message (${audioInfo.demoVoiceId})`
       }]);
-      const ws = new WebSocket(`${(import.meta.env.VITE_SERVER_URL || 'http://localhost:8000').replace('http', 'ws')}/ws/demo`);
-      wsRef.current = ws;
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ demo_voice_id: audioInfo.demoVoiceId }));
-      };
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+      
+      try {
+        console.log("📤 Sending demo request to backend...");
+        const response = await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'}/api/demo`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ demo_voice_id: audioInfo.demoVoiceId }),
+        });
+        
+        console.log("📥 Received response from backend, status:", response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Backend error:", errorText);
+          throw new Error(`Backend error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log("📋 Backend response data:", data);
+        
+        setProgress("searching");
+        
         if (data.type === "diagnosis") {
+          console.log("✅ Received diagnosis response");
           setProgress("replying");
           setMessages(prev => [...prev, { type: "bot", content: data.message }]);
-          setAiTranscript(data.message);
-          setIsProcessing(false);
-          setTimeout(() => setProgress("idle"), 2000);
-          ws.close();
+          setAiTranscript(data.transcribed_text || "Transcription not available");
+          console.log("📝 Transcribed text:", data.transcribed_text);
+          console.log("🤖 AI response:", data.message);
         } else if (data.type === "error") {
-          setIsProcessing(false);
-          setProgress("idle");
+          console.error("❌ Received error response:", data.message);
           setMessages(prev => [...prev, { type: "bot", content: data.message }]);
-          ws.close();
-        } else if (data.type === "demo_processing") {
-          setProgress("searching");
+        } else {
+          console.warn("⚠️ Unknown response type:", data.type);
+          setMessages(prev => [...prev, { type: "bot", content: "Received unexpected response from server." }]);
         }
-      };
-      ws.onerror = () => {
+        
+        setIsProcessing(false);
+        setTimeout(() => setProgress("idle"), 2000);
+        
+      } catch (error) {
+        console.error("❌ Error in demo audio processing:", error);
         setIsProcessing(false);
         setProgress("idle");
-        setMessages(prev => [...prev, { type: "bot", content: "WebSocket error with demo voice." }]);
-        ws.close();
-      };
+        setMessages(prev => [...prev, { 
+          type: "bot", 
+          content: `Error processing demo audio: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        }]);
+      }
     };
 
     // Start the chat flow
@@ -142,14 +165,6 @@ const ChatPage = () => {
       setMessages([getInitialMessage()]); // Reset for new chat
       sendDemoAudio();
     }
-
-    // Cleanup WebSocket on unmount
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-    // eslint-disable-next-line
   }, [audioInfo, navigate]);
 
   if (!audioInfo) return null;

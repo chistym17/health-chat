@@ -81,40 +81,58 @@ const Conversation = () => {
     }
   };
 
-  // Demo audio submission handler (WebSocket)
+  // Demo audio submission handler (HTTP API)
   const sendDemoAudioToBackend = async (demoVoiceId: string) => {
+    console.log("🔄 Starting demo audio processing in Conversation page...");
     setIsProcessing(true);
     setMessages(prev => [...prev, {
       type: 'user',
       content: `🎤 Demo Voice Message (${demoVoiceId})`
     }]);
+    
     try {
-      const ws = new WebSocket(`${(import.meta.env.VITE_SERVER_URL || 'http://localhost:8000').replace('http', 'ws')}/ws/demo`);
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ demo_voice_id: demoVoiceId }));
-      };
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === "diagnosis") {
-          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
-          setIsProcessing(false);
-          ws.close();
-        } else if (data.type === "error") {
-          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
-          setIsProcessing(false);
-          ws.close();
-        } else if (data.type === "demo_processing") {
-          // Optionally show a processing message
-        }
-      };
-      ws.onerror = () => {
-        setIsProcessing(false);
-        setMessages(prev => [...prev, { type: "bot", content: "WebSocket error with demo voice." }]);
-        ws.close();
-      };
-    } catch (error) {
+      console.log("📤 Sending demo request to backend...");
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'}/api/demo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ demo_voice_id: demoVoiceId }),
+      });
+      
+      console.log("📥 Received response from backend, status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Backend error:", errorText);
+        throw new Error(`Backend error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log("📋 Backend response data:", data);
+      
+      if (data.type === "diagnosis") {
+        console.log("✅ Received diagnosis response");
+        setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+        console.log("📝 Transcribed text:", data.transcribed_text);
+        console.log("🤖 AI response:", data.message);
+      } else if (data.type === "error") {
+        console.error("❌ Received error response:", data.message);
+        setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+      } else {
+        console.warn("⚠️ Unknown response type:", data.type);
+        setMessages(prev => [...prev, { type: "bot", content: "Received unexpected response from server." }]);
+      }
+      
       setIsProcessing(false);
-      setMessages(prev => [...prev, { type: "bot", content: "Error sending demo audio to backend." }]);
+      
+    } catch (error) {
+      console.error("❌ Error in demo audio processing:", error);
+      setIsProcessing(false);
+      setMessages(prev => [...prev, { 
+        type: "bot", 
+        content: `Error processing demo audio: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      }]);
     }
   };
 
