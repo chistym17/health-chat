@@ -34,7 +34,7 @@ const ChatPage = () => {
         const formData = new FormData();
         formData.append("audio", audioInfo.audioBlob, "user_audio.wav");
         
-        const response = await fetch("http://localhost:8000/api/audio", {
+        const response = await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'}/api/audio`, {
           method: "POST",
           body: formData,
         });
@@ -104,7 +104,7 @@ const ChatPage = () => {
         type: 'user',
         content: `🎤 Demo Voice Message (${audioInfo.demoVoiceId})`
       }]);
-      const ws = new WebSocket("ws://localhost:8000/ws/demo");
+      const ws = new WebSocket(`${(import.meta.env.VITE_SERVER_URL || 'http://localhost:8000').replace('http', 'ws')}/ws/demo`);
       wsRef.current = ws;
       ws.onopen = () => {
         ws.send(JSON.stringify({ demo_voice_id: audioInfo.demoVoiceId }));
