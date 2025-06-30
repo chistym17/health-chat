@@ -21,18 +21,18 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AudioProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
             <Route path="/conversation" element={<VoiceInputPage />} />
             <Route path="/conversation/chat" element={<ChatPage />} />
-            <Route path="/consultation" element={<StartConsultation />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/about" element={<About />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+          <Route path="/consultation" element={<StartConsultation />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/about" element={<About />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
       </AudioProvider>
     </TooltipProvider>
   </QueryClientProvider>

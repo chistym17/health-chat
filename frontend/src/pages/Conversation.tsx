@@ -49,14 +49,17 @@ const Conversation = () => {
       // Handle different response types
       if (data.type === "diagnosis") {
         console.log("✅ Received diagnosis response");
+        setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);
         console.log("📝 Transcribed text:", data.transcribed_text);
         console.log("🤖 AI response:", data.message);
       } else if (data.type === "info") {
         console.log("ℹ️ Received info response");
+        setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);
       } else if (data.type === "followup") {
         console.log("❓ Received followup response");
+        setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);
       } else if (data.type === "error") {
         console.error("❌ Received error response:", data.message);
