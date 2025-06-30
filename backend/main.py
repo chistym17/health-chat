@@ -35,9 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-app = FastAPI()
-
 classifier_agent = ClassifierAgent()
 diagnosis_agent = DiagnosisAgent()
 
