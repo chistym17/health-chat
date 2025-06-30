@@ -21,24 +21,60 @@ const Conversation = () => {
 
   // Real audio submission handler
   const sendRealAudioToBackend = async (audioBlob: Blob) => {
+    console.log("🔄 Starting real audio processing in Conversation page...");
     setIsProcessing(true);
     setMessages(prev => [...prev, createVoiceMessage("0:00")]);
+    
     try {
-      // Example: POST to /api/audio (adjust as needed)
+      console.log("Sending audio to backend from Conversation page...");
       const formData = new FormData();
       formData.append("audio", audioBlob, "user_audio.wav");
-      const response = await fetch("/api/audio", {
+      
+      const response = await fetch("http://localhost:8000/api/audio", {
         method: "POST",
         body: formData,
       });
-      // Simulate AI processing (replace with real response handling)
-      setTimeout(() => {
-        setMessages(prev => [...prev, createBotResponse()]);
-        setIsProcessing(false);
-      }, 2000);
-    } catch (error) {
+      
+      console.log("📥 Received response from backend, status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Backend error:", errorText);
+        throw new Error(`Backend error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log("📋 Backend response data:", data);
+      
+      // Handle different response types
+      if (data.type === "diagnosis") {
+        console.log("✅ Received diagnosis response");
+        setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+        console.log("📝 Transcribed text:", data.transcribed_text);
+        console.log("🤖 AI response:", data.message);
+      } else if (data.type === "info") {
+        console.log("ℹ️ Received info response");
+        setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+      } else if (data.type === "followup") {
+        console.log("❓ Received followup response");
+        setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+      } else if (data.type === "error") {
+        console.error("❌ Received error response:", data.message);
+        setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+      } else {
+        console.warn("⚠️ Unknown response type:", data.type);
+        setMessages(prev => [...prev, { type: "bot", content: "Received unexpected response from server." }]);
+      }
+      
       setIsProcessing(false);
-      setMessages(prev => [...prev, { type: "bot", content: "Error sending audio to backend." }]);
+      
+    } catch (error) {
+      console.error("❌ Error in real audio processing:", error);
+      setIsProcessing(false);
+      setMessages(prev => [...prev, { 
+        type: "bot", 
+        content: `Error processing audio: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      }]);
     }
   };
 

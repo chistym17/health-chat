@@ -23,28 +23,70 @@ const ChatPage = () => {
     // Handle real audio
     const sendRealAudio = async () => {
       if (audioInfo.type !== "real") return;
+      
+      console.log("🔄 Starting real audio processing...");
       setIsProcessing(true);
       setProgress("processing");
       setMessages(prev => [...prev, createVoiceMessage("0:00")]);
+      
       try {
+        console.log("📤 Sending audio to backend...");
         const formData = new FormData();
         formData.append("audio", audioInfo.audioBlob, "user_audio.wav");
-        const response = await fetch("/api/audio", {
+        
+        const response = await fetch("http://localhost:8000/api/audio", {
           method: "POST",
           body: formData,
         });
+        
+        console.log("📥 Received response from backend, status:", response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Backend error:", errorText);
+          throw new Error(`Backend error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log("📋 Backend response data:", data);
+        
         setProgress("searching");
-        // Simulate AI processing (replace with real response handling)
-        setTimeout(() => {
-          setMessages(prev => [...prev, createBotResponse()]);
-          setIsProcessing(false);
+        
+        // Handle different response types
+        if (data.type === "diagnosis") {
+          console.log("✅ Received diagnosis response");
           setProgress("replying");
-          setTimeout(() => setProgress("idle"), 2000);
-        }, 2000);
+          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+          setAiTranscript(data.transcribed_text || "Transcription not available");
+          console.log("📝 Transcribed text:", data.transcribed_text);
+          console.log("🤖 AI response:", data.message);
+        } else if (data.type === "info") {
+          console.log("ℹ️ Received info response");
+          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+          setAiTranscript(data.transcribed_text || "Transcription not available");
+        } else if (data.type === "followup") {
+          console.log("❓ Received followup response");
+          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+          setAiTranscript(data.transcribed_text || "Transcription not available");
+        } else if (data.type === "error") {
+          console.error("❌ Received error response:", data.message);
+          setMessages(prev => [...prev, { type: "bot", content: data.message }]);
+        } else {
+          console.warn("⚠️ Unknown response type:", data.type);
+          setMessages(prev => [...prev, { type: "bot", content: "Received unexpected response from server." }]);
+        }
+        
+        setIsProcessing(false);
+        setTimeout(() => setProgress("idle"), 2000);
+        
       } catch (error) {
+        console.error("❌ Error in real audio processing:", error);
         setIsProcessing(false);
         setProgress("idle");
-        setMessages(prev => [...prev, { type: "bot", content: "Error sending audio to backend." }]);
+        setMessages(prev => [...prev, { 
+          type: "bot", 
+          content: `Error processing audio: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        }]);
       }
     };
 
