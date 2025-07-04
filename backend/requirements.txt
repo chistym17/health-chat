@@ -11,3 +11,4 @@ pandas
 requests
 tavily-python
 langchain-tavily
+gTTS
