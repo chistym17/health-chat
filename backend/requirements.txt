@@ -12,3 +12,5 @@ requests
 tavily-python
 langchain-tavily
 gTTS
+aiortc  
+genai-processors 

@@ -129,7 +129,7 @@ const Conversation = () => {
     } catch (error) {
       console.error("❌ Error in demo audio processing:", error);
       setIsProcessing(false);
-      setMessages(prev => [...prev, { 
+      setMessages(prev => [...prev, {
         type: "bot", 
         content: `Error processing demo audio: ${error instanceof Error ? error.message : 'Unknown error'}` 
       }]);
@@ -164,14 +164,14 @@ const Conversation = () => {
           <div className="md:w-5/12 w-full flex flex-col gap-6">
             <InstructionsPanel onDemoClick={() => setIsDemoModalOpen(true)} />
             <VoiceRecorder onAudioSubmit={handleAudioSubmission} isProcessing={isProcessing} />
-          </div>
+                  </div>
           {/* Right: Chat Widget */}
           <div className="md:w-7/12 w-full flex flex-col">
             <ChatWidget messages={messages} isProcessing={isProcessing} />
-          </div>
-        </div>
-      </div>
-      
+                  </div>
+                </div>
+            </div>
+            
       {/* Demo Modal */}
       <DemoModal
         isOpen={isDemoModalOpen}
