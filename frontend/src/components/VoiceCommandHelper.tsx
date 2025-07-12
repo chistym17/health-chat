@@ -7,7 +7,10 @@ import {
   ChevronDown, 
   ChevronUp,
   Lightbulb,
-  MessageSquare
+  MessageSquare,
+  Stethoscope,
+  Calendar,
+  User
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -15,50 +18,49 @@ const VOICE_COMMANDS = [
   {
     category: 'Basic Commands',
     commands: [
-      { command: 'Hello', description: 'Greet the assistant' },
+      { command: 'Hello', description: 'Greet the healthcare assistant' },
       { command: 'How are you?', description: 'Ask about the assistant\'s status' },
-      { command: 'What can you do?', description: 'Learn about available features' },
+      { command: 'What can you do?', description: 'Learn about healthcare features' },
       { command: 'Stop', description: 'Stop the current action' },
       { command: 'Thank you', description: 'Express gratitude' },
     ]
   },
   {
-    category: 'Forms',
+    category: 'Appointment Scheduling',
     commands: [
-      { command: 'Contact form', description: 'Open contact form directly' },
-      { command: 'I want to fill contact form', description: 'Open contact form directly' },
-      { command: 'Fill contact form', description: 'Open contact form directly' },
+      { command: 'I need an appointment', description: 'Start appointment scheduling' },
+      { command: 'Schedule appointment', description: 'Open appointment form' },
+      { command: 'Book appointment', description: 'Open appointment form' },
+      { command: 'I need to see a doctor', description: 'Start appointment scheduling' },
     ]
   },
   {
-    category: 'Contact Form Fields',
+    category: 'Appointment Information',
     commands: [
-      { command: 'My name is John Smith', description: 'Fills the name field' },
-      { command: 'Name is John Smith', description: 'Fills the name field' },
+      { command: 'My name is John Smith', description: 'Fills the patient name field' },
       { command: 'My email is john@example.com', description: 'Fills the email field' },
-      { command: 'Email is john@example.com', description: 'Fills the email field' },
-      { command: 'My message is hello world', description: 'Fills the message field' },
-      { command: 'I want to say hello world', description: 'Fills the message field' },
+      { command: 'I have a headache', description: 'Fills the appointment reason field' },
+      { command: 'I\'m experiencing chest pain', description: 'Fills the appointment reason field' },
+      { command: 'I feel dizzy', description: 'Fills the appointment reason field' },
     ]
   },
   {
-    category: 'Form Submission',
+    category: 'Urgency & Submission',
     commands: [
-      { command: 'Submit', description: 'Submit the form and close it' },
-      { command: 'Send', description: 'Submit the form and close it' },
-      { command: 'Done', description: 'Submit the form and close it' },
-      { command: 'Finish', description: 'Submit the form and close it' },
-      { command: 'Complete', description: 'Submit the form and close it' },
-      { command: 'That\'s it', description: 'Submit the form and close it' },
+      { command: 'It\'s urgent', description: 'Sets high urgency level' },
+      { command: 'This is an emergency', description: 'Sets emergency urgency' },
+      { command: 'Submit appointment', description: 'Submit the appointment form' },
+      { command: 'Schedule appointment', description: 'Submit the appointment form' },
+      { command: 'Confirm appointment', description: 'Submit the appointment form' },
     ]
   },
   {
-    category: 'Conversation',
+    category: 'Healthcare',
     commands: [
-      { command: 'Tell me a joke', description: 'Request a joke' },
-      { command: 'What\'s the weather?', description: 'Ask about weather' },
-      { command: 'What time is it?', description: 'Get current time' },
-      { command: 'Help', description: 'Get help and guidance' },
+      { command: 'I have symptoms', description: 'Report health symptoms' },
+      { command: 'What should I do?', description: 'Get health advice' },
+      { command: 'Is this serious?', description: 'Ask about symptom severity' },
+      { command: 'Help', description: 'Get healthcare assistance' },
     ]
   }
 ];
@@ -71,8 +73,8 @@ export const VoiceCommandHelper: React.FC = () => {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Lightbulb className="w-5 h-5 text-blue-500" />
-            <CardTitle className="text-lg">Voice Commands</CardTitle>
+            <Stethoscope className="w-5 h-5 text-blue-500" />
+            <CardTitle className="text-lg">Healthcare Commands</CardTitle>
           </div>
           <Button
             variant="ghost"
@@ -95,7 +97,11 @@ export const VoiceCommandHelper: React.FC = () => {
             {VOICE_COMMANDS.map((category) => (
               <div key={category.category} className="space-y-2">
                 <h4 className="text-sm font-semibold text-gray-700 flex items-center">
-                  <MessageSquare className="w-4 h-4 mr-2" />
+                  {category.category === 'Appointment Scheduling' && <Calendar className="w-4 h-4 mr-2" />}
+                  {category.category === 'Appointment Information' && <User className="w-4 h-4 mr-2" />}
+                  {category.category === 'Urgency & Submission' && <Stethoscope className="w-4 h-4 mr-2" />}
+                  {category.category === 'Healthcare' && <MessageSquare className="w-4 h-4 mr-2" />}
+                  {category.category === 'Basic Commands' && <Mic className="w-4 h-4 mr-2" />}
                   {category.category}
                 </h4>
                 <div className="space-y-2">

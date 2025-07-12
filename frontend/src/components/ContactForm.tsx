@@ -4,48 +4,48 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { X } from 'lucide-react';
+import { X, Stethoscope, Calendar, User, Mail } from 'lucide-react';
 
-interface ContactFormProps {
+interface AppointmentFormProps {
   isOpen: boolean;
   onClose: () => void;
-  name?: string;
+  patientName?: string;
   email?: string;
-  message?: string;
+  appointmentReason?: string;
   onFieldUpdate?: (field: string, value: string) => void;
 }
 
-export const ContactForm: React.FC<ContactFormProps> = ({ 
+export const AppointmentForm: React.FC<AppointmentFormProps> = ({ 
   isOpen, 
   onClose, 
-  name: externalName, 
+  patientName: externalPatientName, 
   email: externalEmail, 
-  message: externalMessage,
+  appointmentReason: externalAppointmentReason,
   onFieldUpdate 
 }) => {
-  const [name, setName] = useState('');
+  const [patientName, setPatientName] = useState('');
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [appointmentReason, setAppointmentReason] = useState('');
 
   // Update form fields when external values change
   useEffect(() => {
-    if (externalName) setName(externalName);
-  }, [externalName]);
+    if (externalPatientName) setPatientName(externalPatientName);
+  }, [externalPatientName]);
 
   useEffect(() => {
     if (externalEmail) setEmail(externalEmail);
   }, [externalEmail]);
 
   useEffect(() => {
-    if (externalMessage) setMessage(externalMessage);
-  }, [externalMessage]);
+    if (externalAppointmentReason) setAppointmentReason(externalAppointmentReason);
+  }, [externalAppointmentReason]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Reset form
-    setName('');
+    setPatientName('');
     setEmail('');
-    setMessage('');
+    setAppointmentReason('');
     onClose();
   };
 
@@ -63,7 +63,10 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-lg z-50 transform transition-transform duration-300">
         <Card className="h-full rounded-none border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle>Contact Form</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Stethoscope className="w-5 h-5 text-blue-500" />
+              <CardTitle>Appointment Scheduling</CardTitle>
+            </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -71,39 +74,49 @@ export const ContactForm: React.FC<ContactFormProps> = ({
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="patientName" className="flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span>Patient Name</span>
+                </Label>
                 <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
+                  id="patientName"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  placeholder="Enter your full name"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="flex items-center space-x-2">
+                  <Mail className="w-4 h-4" />
+                  <span>Email</span>
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="Enter your email for confirmations"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
+                <Label htmlFor="appointmentReason" className="flex items-center space-x-2">
+                  <Stethoscope className="w-4 h-4" />
+                  <span>Appointment Reason</span>
+                </Label>
                 <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Enter your message"
+                  id="appointmentReason"
+                  value={appointmentReason}
+                  onChange={(e) => setAppointmentReason(e.target.value)}
+                  placeholder="Describe your symptoms or reason for the appointment"
                   rows={4}
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Submit
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                <Calendar className="w-4 h-4 mr-2" />
+                Schedule Appointment
               </Button>
             </form>
           </CardContent>
@@ -111,4 +124,9 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       </div>
     </>
   );
+};
+
+// Keep ContactForm for backward compatibility
+export const ContactForm: React.FC<any> = (props) => {
+  return <AppointmentForm {...props} />;
 }; 

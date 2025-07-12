@@ -4,8 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { VoiceCommandHelper } from "@/components/VoiceCommandHelper";
-import { ContactForm } from "@/components/ContactForm";
-import { useContactFormTrigger } from "@/hooks/useContactFormTrigger";
+import { AppointmentForm } from "@/components/ContactForm";
+import { useAppointmentFormTrigger } from "@/hooks/useContactFormTrigger";
 import { 
   Mic, 
   MicOff, 
@@ -18,17 +18,18 @@ import {
   Settings,
   MoreVertical,
   Trash2,
-  FileText
+  FileText,
+  Stethoscope
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const VoiceChat = () => {
   const navigate = useNavigate();
-  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
-  const [formFields, setFormFields] = useState({
-    name: '',
+  const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(false);
+  const [appointmentFields, setAppointmentFields] = useState({
+    patient_name: '',
     email: '',
-    message: ''
+    appointment_reason: ''
   });
   
   const {
@@ -42,29 +43,29 @@ const VoiceChat = () => {
   } = useRTVI(true);
 
   const handleFieldUpdate = useCallback((field: string, value: string) => {
-    setFormFields(prev => ({
+    setAppointmentFields(prev => ({
       ...prev,
       [field]: value
     }));
   }, []);
 
   const handleFormSubmit = useCallback(() => {
-    alert('Your form has been submitted successfully!');
+    alert('Your appointment has been scheduled successfully! We will send you a confirmation email with all the details.');
     
-    setFormFields({
-      name: '',
+    setAppointmentFields({
+      patient_name: '',
       email: '',
-      message: ''
+      appointment_reason: ''
     });
     
-    setIsContactFormOpen(false);
-  }, [formFields, isContactFormOpen]);
+    setIsAppointmentFormOpen(false);
+  }, [appointmentFields, isAppointmentFormOpen]);
 
   const handleOpenForm = useCallback(() => {
-    setIsContactFormOpen(true);
+    setIsAppointmentFormOpen(true);
   }, []);
 
-  useContactFormTrigger(messages, handleOpenForm, handleFieldUpdate, handleFormSubmit);
+  useAppointmentFormTrigger(messages, handleOpenForm, handleFieldUpdate, handleFormSubmit);
 
   const scrollToBottom = () => {
     audioRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,10 +98,10 @@ const VoiceChat = () => {
             </Button>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
+                <Stethoscope className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-slate-800 font-semibold">Voice Assistant</h1>
+                <h1 className="text-slate-800 font-semibold">Healia Healthcare Assistant</h1>
                 <p className="text-sm text-slate-600">
                   {rtviState.currentSpeaker === 'user' ? 'Listening...' : rtviState.currentSpeaker === 'bot' ? 'Speaking...' : rtviState.isBotReady ? 'Online' : isConnecting ? 'Connecting...' : 'Disconnected'}
                 </p>
@@ -127,7 +128,7 @@ const VoiceChat = () => {
               {rtviState.currentSpeaker === 'bot' ? (
                 <div className="relative">
                   {/* Bot Icon */}
-                  <Bot className="w-12 h-12 text-white animate-bounce" />
+                  <Stethoscope className="w-12 h-12 text-white animate-bounce" />
                   
                   {/* Vibrating Rings */}
                   <div className="absolute inset-0 rounded-full border-2 border-white/30 animate-ping"></div>
@@ -163,11 +164,11 @@ const VoiceChat = () => {
                   : "text-gray-600"
               )}>
                 {rtviState.currentSpeaker === 'bot' 
-                  ? 'AI Speaking' 
+                  ? 'Healthcare Assistant Speaking' 
                   : rtviState.currentSpeaker === 'user'
                   ? 'Listening...'
                   : rtviState.isBotReady 
-                  ? 'Ready to Chat'
+                  ? 'Ready to Help'
                   : isConnecting 
                   ? 'Connecting...'
                   : 'Disconnected'
@@ -183,11 +184,11 @@ const VoiceChat = () => {
                   : "text-gray-500"
               )}>
                 {rtviState.currentSpeaker === 'bot' 
-                  ? 'Processing your request...' 
+                  ? 'Processing your health request...' 
                   : rtviState.currentSpeaker === 'user'
                   ? 'Speak now to interact'
                   : rtviState.isBotReady 
-                  ? 'Start a conversation or try voice commands'
+                  ? 'Say "I need an appointment" to get started'
                   : isConnecting 
                   ? 'Establishing connection...'
                   : 'Click connect to start'
@@ -213,13 +214,13 @@ const VoiceChat = () => {
           {/* Connection Status */}
           {!rtviState.isConnected && !isConnecting && !error && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-blue-600 text-sm">Not connected to voice bot</p>
+              <p className="text-blue-600 text-sm">Not connected to healthcare assistant</p>
               <Button 
                 onClick={startBot} 
                 className="mt-2"
                 disabled={isConnecting}
               >
-                {isConnecting ? 'Connecting...' : 'Connect to Bot'}
+                {isConnecting ? 'Connecting...' : 'Connect to Assistant'}
               </Button>
             </div>
           )}
@@ -229,13 +230,13 @@ const VoiceChat = () => {
       {/* Voice Command Helper */}
       <VoiceCommandHelper />
 
-      {/* Contact Form */}
-      <ContactForm
-        isOpen={isContactFormOpen}
-        onClose={() => setIsContactFormOpen(false)}
-        name={formFields.name}
-        email={formFields.email}
-        message={formFields.message}
+      {/* Appointment Form */}
+      <AppointmentForm
+        isOpen={isAppointmentFormOpen}
+        onClose={() => setIsAppointmentFormOpen(false)}
+        patientName={appointmentFields.patient_name}
+        email={appointmentFields.email}
+        appointmentReason={appointmentFields.appointment_reason}
         onFieldUpdate={handleFieldUpdate}
       />
 

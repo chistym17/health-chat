@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { ChatMessage } from '../types/rtvi';
 
-export const useContactFormTrigger = (
+export const useAppointmentFormTrigger = (
   messages: ChatMessage[], 
   onOpenForm: () => void,
   onUpdateField?: (field: string, value: string) => void,
@@ -27,21 +27,23 @@ export const useContactFormTrigger = (
       if (message.type === 'bot') {
         const text = message.text.toLowerCase().trim();
         
-        // Check if bot is asking about form types
-        if (text.includes('which form') || text.includes('what type of form') || text.includes('registration, contact, or feedback')) {
+        // Check if bot is asking about appointment scheduling
+        if (text.includes('appointment') || text.includes('schedule') || text.includes('book')) {
           formOpened.current = true;
           onOpenFormRef.current();
         }
       }
       
-      // Parse user messages for form field updates and submission
+      // Parse user messages for appointment field updates and submission
       if (message.type === 'user' && !message.isInterim && formOpened.current) {
         const text = message.text.toLowerCase().trim();
         
         // Check for submission commands first
         const submitPatterns = [
-          /submit/i,
-          /send/i,
+          /submit appointment/i,
+          /schedule appointment/i,
+          /book appointment/i,
+          /confirm appointment/i,
           /done/i,
           /finish/i,
           /complete/i,
@@ -64,7 +66,7 @@ export const useContactFormTrigger = (
         
         // If it's not a submission, process field updates
         if (!isSubmission && onUpdateFieldRef.current) {
-          // Parse name patterns
+          // Parse patient name patterns
           const namePatterns = [
             /my name is (.+)/i,
             /name is (.+)/i,
@@ -78,7 +80,7 @@ export const useContactFormTrigger = (
             if (match && match[1]) {
               const name = match[1].trim();
               if (name.length > 1 && name.length < 50) {
-                onUpdateFieldRef.current('name', name);
+                onUpdateFieldRef.current('patient_name', name);
                 break;
               }
             }
@@ -105,22 +107,46 @@ export const useContactFormTrigger = (
             }
           }
           
-          // Parse message patterns
-          const messagePatterns = [
-            /my message is (.+)/i,
-            /message is (.+)/i,
-            /i want to say (.+)/i,
-            /tell them (.+)/i
+          // Parse appointment reason/symptoms patterns
+          const reasonPatterns = [
+            /i have (.+)/i,
+            /i'm experiencing (.+)/i,
+            /i feel (.+)/i,
+            /symptoms (.+)/i,
+            /pain (.+)/i,
+            /problem (.+)/i,
+            /i need to see a doctor for (.+)/i,
+            /i need help with (.+)/i
           ];
           
-          for (const pattern of messagePatterns) {
+          for (const pattern of reasonPatterns) {
             const match = text.match(pattern);
             if (match && match[1]) {
-              const message = match[1].trim();
-              if (message.length > 3) {
-                onUpdateFieldRef.current('message', message);
+              const reason = match[1].trim();
+              if (reason.length > 3) {
+                onUpdateFieldRef.current('appointment_reason', reason);
                 break;
               }
+            }
+          }
+          
+          // Parse urgency patterns
+          const urgencyPatterns = [
+            /it's urgent/i,
+            /this is urgent/i,
+            /emergency/i,
+            /immediate/i,
+            /asap/i
+          ];
+          
+          for (const pattern of urgencyPatterns) {
+            if (pattern.test(text)) {
+              let urgency = 'high';
+              if (text.includes('emergency')) {
+                urgency = 'emergency';
+              }
+              onUpdateFieldRef.current('urgency_level', urgency);
+              break;
             }
           }
         }
@@ -129,4 +155,7 @@ export const useContactFormTrigger = (
       lastProcessedMessageId.current = message.id;
     }
   }, [messages]); // Only depend on messages, not the callbacks
-}; 
+};
+
+// Keep useContactFormTrigger for backward compatibility
+export const useContactFormTrigger = useAppointmentFormTrigger; 

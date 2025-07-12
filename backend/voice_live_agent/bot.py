@@ -25,8 +25,8 @@ from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.services.llm_service import FunctionCallParams
 
 from voice_live_agent.prompts import SYSTEM_INSTRUCTION
-from voice_live_agent.form_tools import FormTools
-from voice_live_agent.form_declarations import function_declarations, open_form_decl, update_form_field_decl, submit_form_decl
+from voice_live_agent.form_tools import AppointmentTools
+from voice_live_agent.form_declarations import function_declarations, open_appointment_decl, update_appointment_field_decl, submit_appointment_decl
 from voice_live_agent.conversation_storage import conversation_storage
 
 load_dotenv(override=True)
@@ -34,24 +34,24 @@ load_dotenv(override=True)
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
-# Initialize form tools
-form_tools = FormTools()
+# Initialize appointment tools
+appointment_tools = AppointmentTools()
 
 # Define FunctionSchemas for Pipecat
-open_form_schema = FunctionSchema(**open_form_decl)
-update_form_field_schema = FunctionSchema(**update_form_field_decl)
-submit_form_schema = FunctionSchema(**submit_form_decl)
+open_appointment_schema = FunctionSchema(**open_appointment_decl)
+update_appointment_field_schema = FunctionSchema(**update_appointment_field_decl)
+submit_appointment_schema = FunctionSchema(**submit_appointment_decl)
 
 # Create tools schema
-tools = ToolsSchema(standard_tools=[open_form_schema, update_form_field_schema, submit_form_schema])
+tools = ToolsSchema(standard_tools=[open_appointment_schema, update_appointment_field_schema, submit_appointment_schema])
 
 
-class FormCommandProcessor(FrameProcessor):
-    """Process form-related commands from user transcripts and save conversations"""
+class AppointmentCommandProcessor(FrameProcessor):
+    """Process appointment-related commands from user transcripts and save conversations"""
     
-    def __init__(self, form_tools: FormTools, context_aggregator, session_id: str = None):
+    def __init__(self, appointment_tools: AppointmentTools, context_aggregator, session_id: str = None):
         super().__init__()
-        self.form_tools = form_tools
+        self.appointment_tools = appointment_tools
         self.context_aggregator = context_aggregator
         self.session_id = session_id
         
@@ -70,26 +70,26 @@ class FormCommandProcessor(FrameProcessor):
                     metadata={"user_id": frame.user_id, "final": frame.final}
                 )
             
-            await self.process_form_commands(frame.text)
+            await self.process_appointment_commands(frame.text)
         
         await self.push_frame(frame, direction)
     
-    async def process_form_commands(self, text: str):
-        """Process form-related commands in user text"""
+    async def process_appointment_commands(self, text: str):
+        """Process appointment-related commands in user text"""
         text_lower = text.lower().strip()
         
-        # Form opening commands
-        if any(phrase in text_lower for phrase in ["fill a form", "open a form", "start a form", "registration form", "contact form", "feedback form"]):
-            form_type = "registration"
-            if "contact" in text_lower:
-                form_type = "contact"
-            elif "feedback" in text_lower:
-                form_type = "feedback"
+        # Appointment opening commands
+        if any(phrase in text_lower for phrase in ["need appointment", "schedule appointment", "book appointment", "make appointment", "see doctor", "see a doctor"]):
+            appointment_type = "general"
+            if any(word in text_lower for word in ["urgent", "emergency", "immediate"]):
+                appointment_type = "urgent"
+            elif any(word in text_lower for word in ["follow up", "follow-up", "followup"]):
+                appointment_type = "follow_up"
             
-            result = self.form_tools.open_form(form_type)
+            result = self.appointment_tools.open_appointment(appointment_type)
             if result["success"]:
-                print(f"Form opened: {result}")
-                # Add form status to context
+                print(f"Appointment form opened: {result}")
+                # Add appointment status to context
                 await self.context_aggregator.user().add_message({
                     "role": "assistant",
                     "content": result["message"]
@@ -100,18 +100,18 @@ class FormCommandProcessor(FrameProcessor):
                     conversation_storage.add_assistant_message(
                         self.session_id,
                         result["message"],
-                        message_type="form_action",
-                        metadata={"action": "open_form", "form_type": form_type}
+                        message_type="appointment_action",
+                        metadata={"action": "open_appointment", "appointment_type": appointment_type}
                     )
         
-        # Field updates (simple pattern matching)
+        # Patient name updates
         elif "my name is" in text_lower:
             name_match = re.search(r"my name is (.+)", text_lower)
             if name_match:
                 name = name_match.group(1).strip()
-                result = self.form_tools.update_form_field("name", name)
+                result = self.appointment_tools.update_appointment_field("patient_name", name)
                 if result["success"]:
-                    print(f"Name updated: {result}")
+                    print(f"Patient name updated: {result}")
                     await self.context_aggregator.user().add_message({
                         "role": "assistant", 
                         "content": result["message"]
@@ -122,15 +122,16 @@ class FormCommandProcessor(FrameProcessor):
                         conversation_storage.add_assistant_message(
                             self.session_id,
                             result["message"],
-                            message_type="form_action",
-                            metadata={"action": "update_field", "field": "name", "value": name}
+                            message_type="appointment_action",
+                            metadata={"action": "update_field", "field": "patient_name", "value": name}
                         )
         
+        # Email updates
         elif "my email is" in text_lower or "email is" in text_lower:
             email_match = re.search(r"(?:my )?email is (.+)", text_lower)
             if email_match:
                 email = email_match.group(1).strip()
-                result = self.form_tools.update_form_field("email", email)
+                result = self.appointment_tools.update_appointment_field("email", email)
                 if result["success"]:
                     print(f"Email updated: {result}")
                     await self.context_aggregator.user().add_message({
@@ -143,36 +144,55 @@ class FormCommandProcessor(FrameProcessor):
                         conversation_storage.add_assistant_message(
                             self.session_id,
                             result["message"],
-                            message_type="form_action",
+                            message_type="appointment_action",
                             metadata={"action": "update_field", "field": "email", "value": email}
                         )
         
-        elif "my phone" in text_lower or "phone number" in text_lower:
-            phone_match = re.search(r"(?:my )?phone(?: number)? is (.+)", text_lower)
-            if phone_match:
-                phone = phone_match.group(1).strip()
-                result = self.form_tools.update_form_field("phone", phone)
-                if result["success"]:
-                    print(f"Phone updated: {result}")
-                    await self.context_aggregator.user().add_message({
-                        "role": "assistant",
-                        "content": result["message"]
-                    })
-                    
-                    # Save assistant response to conversation storage
-                    if self.session_id:
-                        conversation_storage.add_assistant_message(
-                            self.session_id,
-                            result["message"],
-                            message_type="form_action",
-                            metadata={"action": "update_field", "field": "phone", "value": phone}
-                        )
+        # Appointment reason/symptoms
+        elif any(phrase in text_lower for phrase in ["i have", "i'm experiencing", "i feel", "symptoms", "pain", "problem"]):
+            # Extract the reason from the text
+            reason_patterns = [
+                r"i have (.+)",
+                r"i'm experiencing (.+)",
+                r"i feel (.+)",
+                r"symptoms (.+)",
+                r"pain (.+)",
+                r"problem (.+)"
+            ]
+            
+            for pattern in reason_patterns:
+                match = re.search(pattern, text_lower)
+                if match:
+                    reason = match.group(1).strip()
+                    result = self.appointment_tools.update_appointment_field("appointment_reason", reason)
+                    if result["success"]:
+                        print(f"Appointment reason updated: {result}")
+                        await self.context_aggregator.user().add_message({
+                            "role": "assistant",
+                            "content": result["message"]
+                        })
+                        
+                        # Save assistant response to conversation storage
+                        if self.session_id:
+                            conversation_storage.add_assistant_message(
+                                self.session_id,
+                                result["message"],
+                                message_type="appointment_action",
+                                metadata={"action": "update_field", "field": "appointment_reason", "value": reason}
+                            )
+                        break
         
-        # Form submission
-        elif any(phrase in text_lower for phrase in ["submit form", "send form", "submit the form", "send the form"]):
-            result = self.form_tools.submit_form()
+        # Urgency level
+        elif any(phrase in text_lower for phrase in ["it's urgent", "this is urgent", "emergency", "immediate", "asap"]):
+            urgency = "high"
+            if "emergency" in text_lower:
+                urgency = "emergency"
+            elif "immediate" in text_lower or "asap" in text_lower:
+                urgency = "high"
+            
+            result = self.appointment_tools.update_appointment_field("urgency_level", urgency)
             if result["success"]:
-                print(f"Form submitted: {result}")
+                print(f"Urgency level updated: {result}")
                 await self.context_aggregator.user().add_message({
                     "role": "assistant",
                     "content": result["message"]
@@ -183,11 +203,30 @@ class FormCommandProcessor(FrameProcessor):
                     conversation_storage.add_assistant_message(
                         self.session_id,
                         result["message"],
-                        message_type="form_action",
-                        metadata={"action": "submit_form"}
+                        message_type="appointment_action",
+                        metadata={"action": "update_field", "field": "urgency_level", "value": urgency}
+                    )
+        
+        # Appointment submission
+        elif any(phrase in text_lower for phrase in ["submit appointment", "schedule appointment", "book appointment", "confirm appointment"]):
+            result = self.appointment_tools.submit_appointment()
+            if result["success"]:
+                print(f"Appointment submitted: {result}")
+                await self.context_aggregator.user().add_message({
+                    "role": "assistant",
+                    "content": result["message"]
+                })
+                
+                # Save assistant response to conversation storage
+                if self.session_id:
+                    conversation_storage.add_assistant_message(
+                        self.session_id,
+                        result["message"],
+                        message_type="appointment_action",
+                        metadata={"action": "submit_appointment"}
                     )
             else:
-                print(f"Form submission failed: {result}")
+                print(f"Appointment submission failed: {result}")
                 await self.context_aggregator.user().add_message({
                     "role": "assistant",
                     "content": result["error"]
@@ -198,8 +237,8 @@ class FormCommandProcessor(FrameProcessor):
                     conversation_storage.add_assistant_message(
                         self.session_id,
                         result["error"],
-                        message_type="form_action",
-                        metadata={"action": "submit_form", "error": True}
+                        message_type="appointment_action",
+                        metadata={"action": "submit_appointment", "error": True}
                     )
 
 
@@ -238,7 +277,7 @@ async def main():
         transport = DailyTransport(
             room_url,
             token,
-            "Chatbot",
+            "Healia Healthcare Assistant",
             DailyParams(
                 audio_in_sample_rate=16000,
                 audio_out_sample_rate=24000,
@@ -262,37 +301,37 @@ async def main():
         )
 
         # Register function handlers
-        async def open_form_handler(params: FunctionCallParams):
-            form_type = params.arguments.get("form_type", "registration")
-            print(f"[TOOL CALL] open_form: {form_type}")
-            result = form_tools.open_form(form_type)
+        async def open_appointment_handler(params: FunctionCallParams):
+            appointment_type = params.arguments.get("appointment_type", "general")
+            print(f"[TOOL CALL] open_appointment: {appointment_type}")
+            result = appointment_tools.open_appointment(appointment_type)
             print(f"[TOOL RESULT] {result}")
             await params.result_callback(result)
 
-        async def update_form_field_handler(params: FunctionCallParams):
+        async def update_appointment_field_handler(params: FunctionCallParams):
             field_name = params.arguments.get("field_name", "")
             value = params.arguments.get("value", "")
-            print(f"[TOOL CALL] update_form_field: {field_name}={value}")
+            print(f"[TOOL CALL] update_appointment_field: {field_name}={value}")
             # Print extracted data
             print(f"[EXTRACTED DATA] field_name: {field_name}, value: {value}")
-            result = form_tools.update_form_field(field_name, value)
+            result = appointment_tools.update_appointment_field(field_name, value)
             print(f"[TOOL RESULT] {result}")
             await params.result_callback(result)
 
-        async def submit_form_handler(params: FunctionCallParams):
-            print(f"[TOOL CALL] submit_form")
-            result = form_tools.submit_form()
+        async def submit_appointment_handler(params: FunctionCallParams):
+            print(f"[TOOL CALL] submit_appointment")
+            result = appointment_tools.submit_appointment()
             print(f"[TOOL RESULT] {result}")
             await params.result_callback(result)
 
-        llm.register_function("open_form", open_form_handler)
-        llm.register_function("update_form_field", update_form_field_handler)
-        llm.register_function("submit_form", submit_form_handler)
+        llm.register_function("open_appointment", open_appointment_handler)
+        llm.register_function("update_appointment_field", update_appointment_field_handler)
+        llm.register_function("submit_appointment", submit_appointment_handler)
 
         messages = [
             {
                 "role": "user",
-                "content": 'Start by saying "Hello, I\'m Gemini. I can help you with conversations and filling out forms. Just say \'I want to fill a form\' to get started."',
+                "content": 'Start by saying "Hello, I\'m Healia, your healthcare assistant. I can help you schedule appointments and provide health guidance. If you need to schedule an appointment, just say \'I need an appointment\' and I\'ll help you through the process."',
             },
         ]
 
@@ -303,11 +342,11 @@ async def main():
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
 
         # Start a new conversation session
-        session_id = conversation_storage.start_session(session_type="voice_chat")
+        session_id = conversation_storage.start_session(session_type="healthcare_appointment")
         print(f"[CONVERSATION] Started session: {session_id}")
 
-        # Create form command processor with session ID
-        form_processor = FormCommandProcessor(form_tools, context_aggregator, session_id)
+        # Create appointment command processor with session ID
+        appointment_processor = AppointmentCommandProcessor(appointment_tools, context_aggregator, session_id)
         
         # Create conversation processor
         conversation_processor = ConversationProcessor(session_id)
@@ -318,7 +357,7 @@ async def main():
                 rtvi,
                 context_aggregator.user(),
                 llm,
-                form_processor,  # Add form processor before filter
+                appointment_processor,  # Add appointment processor before filter
                 conversation_processor,  # Add conversation processor
                 transport.output(),
                 context_aggregator.assistant(),
