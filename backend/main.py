@@ -9,6 +9,7 @@ import uvicorn
 from demo_router import router as demo_router
 from voice_router import router as voice_router, initialize_voice_bot, cleanup_voice_bot
 from rtvi_router import router as rtvi_router
+from conversation_router import router as conversation_router
 import logging
 
 from api.router import router as api_router
@@ -39,6 +40,7 @@ app.include_router(api_router, prefix="/api", tags=["API"])
 app.include_router(demo_router, tags=["Demo"])
 app.include_router(voice_router, tags=["Voice Bot"])
 app.include_router(rtvi_router, tags=["RTVI"])
+app.include_router(conversation_router, tags=["Conversations"])
 
 # Serve static files
 app.mount("/static", StaticFiles(directory="."), name="static")

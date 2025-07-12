@@ -27,6 +27,7 @@ from pipecat.services.llm_service import FunctionCallParams
 from voice_live_agent.prompts import SYSTEM_INSTRUCTION
 from voice_live_agent.form_tools import FormTools
 from voice_live_agent.form_declarations import function_declarations, open_form_decl, update_form_field_decl, submit_form_decl
+from voice_live_agent.conversation_storage import conversation_storage
 
 load_dotenv(override=True)
 
@@ -46,18 +47,29 @@ tools = ToolsSchema(standard_tools=[open_form_schema, update_form_field_schema, 
 
 
 class FormCommandProcessor(FrameProcessor):
-    """Process form-related commands from user transcripts"""
+    """Process form-related commands from user transcripts and save conversations"""
     
-    def __init__(self, form_tools: FormTools, context_aggregator):
+    def __init__(self, form_tools: FormTools, context_aggregator, session_id: str = None):
         super().__init__()
         self.form_tools = form_tools
         self.context_aggregator = context_aggregator
+        self.session_id = session_id
         
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
         
         if isinstance(frame, TranscriptionFrame) and frame.user_id == "user" and frame.final:
             print(f"[BACKEND] Processing final user transcript: '{frame.text}'")
+            
+            # Save user transcription to conversation storage
+            if self.session_id:
+                conversation_storage.add_user_message(
+                    self.session_id, 
+                    frame.text, 
+                    message_type="transcription",
+                    metadata={"user_id": frame.user_id, "final": frame.final}
+                )
+            
             await self.process_form_commands(frame.text)
         
         await self.push_frame(frame, direction)
@@ -82,6 +94,15 @@ class FormCommandProcessor(FrameProcessor):
                     "role": "assistant",
                     "content": result["message"]
                 })
+                
+                # Save assistant response to conversation storage
+                if self.session_id:
+                    conversation_storage.add_assistant_message(
+                        self.session_id,
+                        result["message"],
+                        message_type="form_action",
+                        metadata={"action": "open_form", "form_type": form_type}
+                    )
         
         # Field updates (simple pattern matching)
         elif "my name is" in text_lower:
@@ -95,6 +116,15 @@ class FormCommandProcessor(FrameProcessor):
                         "role": "assistant", 
                         "content": result["message"]
                     })
+                    
+                    # Save assistant response to conversation storage
+                    if self.session_id:
+                        conversation_storage.add_assistant_message(
+                            self.session_id,
+                            result["message"],
+                            message_type="form_action",
+                            metadata={"action": "update_field", "field": "name", "value": name}
+                        )
         
         elif "my email is" in text_lower or "email is" in text_lower:
             email_match = re.search(r"(?:my )?email is (.+)", text_lower)
@@ -107,6 +137,15 @@ class FormCommandProcessor(FrameProcessor):
                         "role": "assistant",
                         "content": result["message"]
                     })
+                    
+                    # Save assistant response to conversation storage
+                    if self.session_id:
+                        conversation_storage.add_assistant_message(
+                            self.session_id,
+                            result["message"],
+                            message_type="form_action",
+                            metadata={"action": "update_field", "field": "email", "value": email}
+                        )
         
         elif "my phone" in text_lower or "phone number" in text_lower:
             phone_match = re.search(r"(?:my )?phone(?: number)? is (.+)", text_lower)
@@ -119,6 +158,15 @@ class FormCommandProcessor(FrameProcessor):
                         "role": "assistant",
                         "content": result["message"]
                     })
+                    
+                    # Save assistant response to conversation storage
+                    if self.session_id:
+                        conversation_storage.add_assistant_message(
+                            self.session_id,
+                            result["message"],
+                            message_type="form_action",
+                            metadata={"action": "update_field", "field": "phone", "value": phone}
+                        )
         
         # Form submission
         elif any(phrase in text_lower for phrase in ["submit form", "send form", "submit the form", "send the form"]):
@@ -129,12 +177,58 @@ class FormCommandProcessor(FrameProcessor):
                     "role": "assistant",
                     "content": result["message"]
                 })
+                
+                # Save assistant response to conversation storage
+                if self.session_id:
+                    conversation_storage.add_assistant_message(
+                        self.session_id,
+                        result["message"],
+                        message_type="form_action",
+                        metadata={"action": "submit_form"}
+                    )
             else:
                 print(f"Form submission failed: {result}")
                 await self.context_aggregator.user().add_message({
                     "role": "assistant",
                     "content": result["error"]
                 })
+                
+                # Save assistant response to conversation storage
+                if self.session_id:
+                    conversation_storage.add_assistant_message(
+                        self.session_id,
+                        result["error"],
+                        message_type="form_action",
+                        metadata={"action": "submit_form", "error": True}
+                    )
+
+
+class ConversationProcessor(FrameProcessor):
+    """Process and save AI responses to conversation storage"""
+    
+    def __init__(self, session_id: str = None):
+        super().__init__()
+        self.session_id = session_id
+        self.current_ai_response = ""
+        
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+        
+        # Handle AI response frames (you might need to adjust this based on the actual frame types)
+        if hasattr(frame, 'text') and frame.text:
+            self.current_ai_response += frame.text
+            
+            # Save AI response to conversation storage
+            if self.session_id and self.current_ai_response.strip():
+                conversation_storage.add_assistant_message(
+                    self.session_id,
+                    self.current_ai_response.strip(),
+                    message_type="ai_response",
+                    metadata={"frame_type": type(frame).__name__}
+                )
+                self.current_ai_response = ""
+        
+        await self.push_frame(frame, direction)
 
 
 async def main():
@@ -208,10 +302,15 @@ async def main():
         # Create the RTVI processor
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
 
-     
+        # Start a new conversation session
+        session_id = conversation_storage.start_session(session_type="voice_chat")
+        print(f"[CONVERSATION] Started session: {session_id}")
 
-        # Create form command processor
-        form_processor = FormCommandProcessor(form_tools, context_aggregator)
+        # Create form command processor with session ID
+        form_processor = FormCommandProcessor(form_tools, context_aggregator, session_id)
+        
+        # Create conversation processor
+        conversation_processor = ConversationProcessor(session_id)
 
         pipeline = Pipeline(
             [
@@ -220,6 +319,7 @@ async def main():
                 context_aggregator.user(),
                 llm,
                 form_processor,  # Add form processor before filter
+                conversation_processor,  # Add conversation processor
                 transport.output(),
                 context_aggregator.assistant(),
             ]
@@ -243,6 +343,11 @@ async def main():
         @transport.event_handler("on_participant_left")
         async def on_participant_left(transport, participant, reason):
             print(f"Participant left: {participant}")
+            
+            # End the conversation session
+            conversation_storage.end_session(session_id)
+            print(f"[CONVERSATION] Session ended: {session_id}")
+            
             await task.queue_frame(EndFrame())
 
         runner = PipelineRunner()

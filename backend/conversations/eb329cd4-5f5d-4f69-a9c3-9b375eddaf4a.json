@@ -1,0 +1,103 @@
+{
+  "session_id": "eb329cd4-5f5d-4f69-a9c3-9b375eddaf4a",
+  "start_time": "2025-07-13T00:08:06.287470",
+  "end_time": "2025-07-13T00:08:06.287943",
+  "user_id": "test_user",
+  "session_type": "voice_chat",
+  "summary": "Patient John Smith reported headache and nausea. Contact information collected.",
+  "health_insights": {
+    "symptoms": [
+      "headache",
+      "nausea"
+    ],
+    "severity": "mild",
+    "recommendations": [
+      "rest",
+      "hydration",
+      "monitor symptoms"
+    ],
+    "follow_up": "Contact doctor if symptoms worsen"
+  },
+  "messages": [
+    {
+      "id": "4d218993-6521-460f-8fb6-72be63606faf",
+      "role": "user",
+      "content": "Hello, I'm feeling a bit unwell today",
+      "timestamp": "2025-07-13T00:08:06.287537",
+      "message_type": "transcription",
+      "metadata": {
+        "message_number": 1
+      }
+    },
+    {
+      "id": "ac60159b-cb46-4f09-8dc0-a09cf27c1b3b",
+      "role": "user",
+      "content": "I have a headache and some nausea",
+      "timestamp": "2025-07-13T00:08:06.287578",
+      "message_type": "transcription",
+      "metadata": {
+        "message_number": 2
+      }
+    },
+    {
+      "id": "0f9a8428-d2c8-4d5e-9180-562ca92f501f",
+      "role": "user",
+      "content": "My name is John Smith",
+      "timestamp": "2025-07-13T00:08:06.287608",
+      "message_type": "transcription",
+      "metadata": {
+        "message_number": 3
+      }
+    },
+    {
+      "id": "3cb4c34b-fa8e-46ef-86c4-a258d4b83b5e",
+      "role": "user",
+      "content": "My email is john@example.com",
+      "timestamp": "2025-07-13T00:08:06.287632",
+      "message_type": "transcription",
+      "metadata": {
+        "message_number": 4
+      }
+    },
+    {
+      "id": "d470f3a6-6323-4669-ae09-1ed85bdaf7a2",
+      "role": "assistant",
+      "content": "Hello! I'm here to help you. Can you tell me more about your symptoms?",
+      "timestamp": "2025-07-13T00:08:06.287682",
+      "message_type": "ai_response",
+      "metadata": {
+        "response_number": 1
+      }
+    },
+    {
+      "id": "8754283b-e436-4a37-b045-098376fa9b36",
+      "role": "assistant",
+      "content": "I understand you're experiencing a headache and nausea. How long have these symptoms been present?",
+      "timestamp": "2025-07-13T00:08:06.287711",
+      "message_type": "ai_response",
+      "metadata": {
+        "response_number": 2
+      }
+    },
+    {
+      "id": "4cc451dd-bc8d-4d0a-a618-6819a8f24aeb",
+      "role": "assistant",
+      "content": "Thank you for providing your name, John Smith.",
+      "timestamp": "2025-07-13T00:08:06.287737",
+      "message_type": "ai_response",
+      "metadata": {
+        "response_number": 3
+      }
+    },
+    {
+      "id": "ca9a4265-bc4e-45e2-a112-9c56f7ea887e",
+      "role": "assistant",
+      "content": "I've recorded your email address as john@example.com.",
+      "timestamp": "2025-07-13T00:08:06.287760",
+      "message_type": "ai_response",
+      "metadata": {
+        "response_number": 4
+      }
+    }
+  ]
+}
