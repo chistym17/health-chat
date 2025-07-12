@@ -13,4 +13,4 @@ tavily-python
 langchain-tavily
 gTTS
 aiortc  
-genai-processors 
+pipecat-ai[daily,silero,google,openai]
