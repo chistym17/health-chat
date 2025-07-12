@@ -74,10 +74,6 @@ const VoiceChat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-white relative overflow-hidden flex flex-col">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-100/30 via-cyan-50/40 to-slate-100/30 animate-pulse"></div>
@@ -114,7 +110,7 @@ const VoiceChat = () => {
         </div>
       </header>
 
-      {/* Messages */}
+      {/* Main Voice Interaction Area */}
       <div className="relative z-10 flex-1 flex items-center justify-center p-4">
         <div className="text-center space-y-8">
           {/* Speaker Display */}
@@ -229,50 +225,6 @@ const VoiceChat = () => {
           )}
         </div>
       </div>
-
-      {/* Chat Messages */}
-      {messages.length > 0 && (
-        <div className="relative z-10 flex-1 p-4 max-w-2xl mx-auto w-full">
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex items-start space-x-3",
-                  message.type === 'user' ? 'justify-end' : 'justify-start'
-                )}
-              >
-                {message.type === 'bot' && (
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-white" />
-                  </div>
-                )}
-                
-                <div
-                  className={cn(
-                    "px-4 py-2 rounded-lg max-w-xs lg:max-w-md",
-                    message.type === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-900',
-                    message.isInterim && 'opacity-70'
-                  )}
-                >
-                  <p className="text-sm">{message.text}</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    {formatTime(message.timestamp)}
-                  </p>
-                </div>
-                
-                {message.type === 'user' && (
-                  <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-white" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Voice Command Helper */}
       <VoiceCommandHelper />
