@@ -122,6 +122,15 @@ export const useRTVI = (autoStart: boolean = true) => {
 
     client.on(RTVIEvent.BotTranscript, (data: BotLLMTextData) => {
       updateLastMessage(data.text, false);
+
+      console.log('in rtvi Bot transcript:', data.text);
+      // Pattern match for completion phrase
+      if (
+        typeof data.text === 'string' &&
+        data.text.toLowerCase().includes('information gathering complete. ready for diagnosis.')
+      ) {
+        alert('Information gathering complete. Ready for diagnosis!');
+      }
     });
 
     client.on(RTVIEvent.ServerMessage, (data) => {

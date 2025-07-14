@@ -27,6 +27,13 @@ export const useAppointmentFormTrigger = (
       if (message.type === 'bot') {
         const text = message.text.toLowerCase().trim();
         
+        // Check for completion phrase first
+        if (text.includes('information gathering complete. ready for diagnosis.')) {
+          alert('Information gathering complete. Ready for diagnosis!');
+          // TODO: Trigger redirect to diagnosis page
+          continue;
+        }
+        
         // Check if bot is asking about appointment scheduling
         if (text.includes('appointment') || text.includes('schedule') || text.includes('book')) {
           formOpened.current = true;

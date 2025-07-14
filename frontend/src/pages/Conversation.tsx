@@ -21,12 +21,10 @@ const Conversation = () => {
 
   // Real audio submission handler
   const sendRealAudioToBackend = async (audioBlob: Blob) => {
-    console.log("🔄 Starting real audio processing in Conversation page...");
     setIsProcessing(true);
     setMessages(prev => [...prev, createVoiceMessage("0:00")]);
     
     try {
-      console.log("Sending audio to backend from Conversation page...");
       const formData = new FormData();
       formData.append("audio", audioBlob, "user_audio.wav");
       
@@ -35,8 +33,6 @@ const Conversation = () => {
         body: formData,
       });
       
-      console.log("📥 Received response from backend, status:", response.status);
-      
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Backend error:", errorText);
@@ -44,21 +40,15 @@ const Conversation = () => {
       }
       
       const data = await response.json();
-      console.log("📋 Backend response data:", data);
       
       // Handle different response types
       if (data.type === "diagnosis") {
-        console.log("✅ Received diagnosis response");
         setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);
-        console.log("📝 Transcribed text:", data.transcribed_text);
-        console.log("🤖 AI response:", data.message);
       } else if (data.type === "info") {
-        console.log("ℹ️ Received info response");
         setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);
       } else if (data.type === "followup") {
-        console.log("❓ Received followup response");
         setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);
       } else if (data.type === "error") {
@@ -83,7 +73,6 @@ const Conversation = () => {
 
   // Demo audio submission handler (HTTP API)
   const sendDemoAudioToBackend = async (demoVoiceId: string) => {
-    console.log("🔄 Starting demo audio processing in Conversation page...");
     setIsProcessing(true);
     setMessages(prev => [...prev, {
       type: 'user',
@@ -91,7 +80,6 @@ const Conversation = () => {
     }]);
     
     try {
-      console.log("📤 Sending demo request to backend...");
       const response = await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'}/api/demo`, {
         method: "POST",
         headers: {
@@ -100,8 +88,6 @@ const Conversation = () => {
         body: JSON.stringify({ demo_voice_id: demoVoiceId }),
       });
       
-      console.log("📥 Received response from backend, status:", response.status);
-      
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Backend error:", errorText);
@@ -109,13 +95,9 @@ const Conversation = () => {
       }
       
       const data = await response.json();
-      console.log("📋 Backend response data:", data);
       
       if (data.type === "diagnosis") {
-        console.log("✅ Received diagnosis response");
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);
-        console.log("📝 Transcribed text:", data.transcribed_text);
-        console.log("🤖 AI response:", data.message);
       } else if (data.type === "error") {
         console.error("❌ Received error response:", data.message);
         setMessages(prev => [...prev, { type: "bot", content: data.message }]);

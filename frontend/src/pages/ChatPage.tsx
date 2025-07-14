@@ -23,13 +23,11 @@ const ChatPage = () => {
     const sendRealAudio = async () => {
       if (audioInfo.type !== "real") return;
       
-      console.log("🔄 Starting real audio processing...");
       setIsProcessing(true);
       setProgress("processing");
       setMessages(prev => [...prev, createVoiceMessage("0:00")]);
       
       try {
-        console.log("📤 Sending audio to backend...");
         const formData = new FormData();
         formData.append("audio", audioInfo.audioBlob, "user_audio.wav");
         
@@ -38,8 +36,6 @@ const ChatPage = () => {
           body: formData,
         });
         
-        console.log("📥 Received response from backend, status:", response.status);
-        
         if (!response.ok) {
           const errorText = await response.text();
           console.error("❌ Backend error:", errorText);
@@ -47,28 +43,22 @@ const ChatPage = () => {
         }
         
         const data = await response.json();
-        console.log("📋 Backend response data:", data);
         
         setProgress("searching");
         
         // Handle different response types
         if (data.type === "diagnosis") {
-          console.log("✅ Received diagnosis response");
           setProgress("replying");
           // Add transcribed text as user message
           setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
           // Add AI response
           setMessages(prev => [...prev, { type: "bot", content: data.message }]);
           setAiTranscript(data.transcribed_text || "Transcription not available");
-          console.log("📝 Transcribed text:", data.transcribed_text);
-          console.log("🤖 AI response:", data.message);
         } else if (data.type === "info") {
-          console.log("ℹ️ Received info response");
           setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
           setMessages(prev => [...prev, { type: "bot", content: data.message }]);
           setAiTranscript(data.transcribed_text || "Transcription not available");
         } else if (data.type === "followup") {
-          console.log("❓ Received followup response");
           setMessages(prev => [...prev, { type: "user", content: data.transcribed_text }]);
           setMessages(prev => [...prev, { type: "bot", content: data.message }]);
           setAiTranscript(data.transcribed_text || "Transcription not available");
@@ -98,7 +88,6 @@ const ChatPage = () => {
     const sendDemoAudio = async () => {
       if (audioInfo.type !== "demo") return;
       
-      console.log("🔄 Starting demo audio processing...");
       setIsProcessing(true);
       setProgress("processing");
       setMessages(prev => [...prev, {
@@ -107,7 +96,6 @@ const ChatPage = () => {
       }]);
       
       try {
-        console.log("📤 Sending demo request to backend...");
         const response = await fetch(`${import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'}/api/demo`, {
           method: "POST",
           headers: {
@@ -116,8 +104,6 @@ const ChatPage = () => {
           body: JSON.stringify({ demo_voice_id: audioInfo.demoVoiceId }),
         });
         
-        console.log("📥 Received response from backend, status:", response.status);
-        
         if (!response.ok) {
           const errorText = await response.text();
           console.error("❌ Backend error:", errorText);
@@ -125,17 +111,13 @@ const ChatPage = () => {
         }
         
         const data = await response.json();
-        console.log("📋 Backend response data:", data);
         
         setProgress("searching");
         
         if (data.type === "diagnosis") {
-          console.log("✅ Received diagnosis response");
           setProgress("replying");
           setMessages(prev => [...prev, { type: "bot", content: data.message }]);
           setAiTranscript(data.transcribed_text || "Transcription not available");
-          console.log("📝 Transcribed text:", data.transcribed_text);
-          console.log("🤖 AI response:", data.message);
         } else if (data.type === "error") {
           console.error("❌ Received error response:", data.message);
           setMessages(prev => [...prev, { type: "bot", content: data.message }]);

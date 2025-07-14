@@ -12,6 +12,11 @@ from helper import configure
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import Frame, EndFrame, TranscriptionFrame
+try:
+    from pipecat.frames.frames import ServerMessageFrame
+    HAS_SERVER_MESSAGE_FRAME = True
+except ImportError:
+    HAS_SERVER_MESSAGE_FRAME = False
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -269,8 +274,7 @@ class ConversationProcessor(FrameProcessor):
                 )
                 # Signal detection logic
                 if self.completion_signal.lower() in self.current_ai_response.strip().lower():
-                    print(f"[SIGNAL] Completion signal detected for session {self.session_id}. Ready for diagnosis workflow.")
-                    # TODO: Trigger next workflow step here
+                    print(f"[SIGNAL] Completion signal detected for session {self.session_id}.")
                 self.current_ai_response = ""
         
         await self.push_frame(frame, direction)
