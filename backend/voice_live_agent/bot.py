@@ -384,10 +384,26 @@ async def main():
             observers=[RTVIObserver(rtvi)],
         )
 
+    
+
         @transport.event_handler("on_first_participant_joined")
         async def on_first_participant_joined(transport, participant):
             await transport.capture_participant_transcription(participant["id"])
             await task.queue_frames([context_aggregator.user().get_context_frame()])
+
+            # Send the test server message here, after pipeline is running
+            try:
+                from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame
+                test_frame = RTVIServerMessageFrame(
+                    data={
+                        "type": "test-server-message",
+                        "payload": {"msg": "Hello from backend!"}
+                    }
+                )
+                await rtvi.push_frame(test_frame)
+                print("[RTVI] Test server message frame sent (after participant joined).")
+            except Exception as e:
+                print(f"[RTVI] Failed to send test server message frame: {e}")
 
         @transport.event_handler("on_participant_left")
         async def on_participant_left(transport, participant, reason):
