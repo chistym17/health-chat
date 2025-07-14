@@ -256,5 +256,12 @@ class ConversationStorage:
         
         return conversation_text
 
+    def get_user_messages(self, session_id: str) -> List[str]:
+        """Get all user message texts for a session (active or from history)"""
+        session = self.get_session(session_id) or self.get_session_history(session_id)
+        if not session:
+            return []
+        return [msg.content for msg in session.messages if msg.role == "user"]
+
 # Global conversation storage instance
 conversation_storage = ConversationStorage() 
