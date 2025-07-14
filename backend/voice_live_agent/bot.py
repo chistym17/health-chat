@@ -249,6 +249,8 @@ class ConversationProcessor(FrameProcessor):
         super().__init__()
         self.session_id = session_id
         self.current_ai_response = ""
+        # Define the completion signal phrase
+        self.completion_signal = "Information gathering complete. Ready for diagnosis."
         
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
@@ -265,6 +267,10 @@ class ConversationProcessor(FrameProcessor):
                     message_type="ai_response",
                     metadata={"frame_type": type(frame).__name__}
                 )
+                # Signal detection logic
+                if self.completion_signal.lower() in self.current_ai_response.strip().lower():
+                    print(f"[SIGNAL] Completion signal detected for session {self.session_id}. Ready for diagnosis workflow.")
+                    # TODO: Trigger next workflow step here
                 self.current_ai_response = ""
         
         await self.push_frame(frame, direction)
