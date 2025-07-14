@@ -31,6 +31,7 @@ class ConversationSession:
     session_type: str = "voice_chat"  # 'voice_chat', 'diagnosis', 'consultation'
     summary: Optional[str] = None
     health_insights: Optional[Dict[str, Any]] = None
+    diagnosis_result: Optional[str] = None  # <-- Added field
     
     def __post_init__(self):
         if self.messages is None:
@@ -85,7 +86,8 @@ class ConversationStorage:
             user_id=data.get('user_id'),
             session_type=data.get('session_type', 'voice_chat'),
             summary=data.get('summary'),
-            health_insights=data.get('health_insights')
+            health_insights=data.get('health_insights'),
+            diagnosis_result=data.get('diagnosis_result') # <-- Added deserialization
         )
         return session
     
@@ -202,6 +204,21 @@ class ConversationStorage:
                     self._save_session(session)
                     break
     
+    def set_diagnosis_result(self, session_id: str, result: str):
+        """Set the diagnosis result for a session (active or from history)"""
+        session = self.get_session(session_id) or self.get_session_history(session_id)
+        if session:
+            session.diagnosis_result = result
+            self._save_session(session)
+            print(f"[CONVERSATION] Diagnosis result set for session: {session_id}")
+
+    def get_diagnosis_result(self, session_id: str) -> Optional[str]:
+        """Get the diagnosis result for a session (active or from history)"""
+        session = self.get_session(session_id) or self.get_session_history(session_id)
+        if session:
+            return session.diagnosis_result
+        return None
+    
     def _save_session(self, session: ConversationSession):
         """Save a session to file"""
         try:
@@ -217,6 +234,7 @@ class ConversationStorage:
                 'session_type': session.session_type,
                 'summary': session.summary,
                 'health_insights': session.health_insights,
+                'diagnosis_result': session.diagnosis_result, # <-- Added serialization
                 'messages': []
             }
             
